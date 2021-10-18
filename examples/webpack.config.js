@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
 
 const entrys = {
-    basic: 'basic/index.tsx'
+    basic: 'src/basic/index.tsx'
 }
 
 const entrysHtmlPlugin = Object.keys(entrys).map(key => {
@@ -44,9 +44,6 @@ module.exports = {
         hot: true,
         open: {
             target: [`http://localhost:${port}/basic.html`]
-        },
-        client: {
-            progress: true
         }
     },
 

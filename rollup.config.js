@@ -16,5 +16,4 @@ const entrysConfig = entrys.map(({ path }) => {
     }
 })
 
-
 export default entrysConfig

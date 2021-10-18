@@ -1,6 +1,4 @@
-const render = (a, b) => {
-    console.log('render')
-}
+import { render } from "./ReactDOMLegacy"
 
 const ReactDom = {
     render
