@@ -3,6 +3,7 @@ import { SuspenseHydrationCallbacks } from "./ReactInternalTypes";
 import { RootTag } from "./ReactRootTags";
 import { NoLanes } from "./ReactFiberLane";
 import { createHostRootFiber, TFiberNode } from "./ReactFiber";
+import { initializeUpdateQueue } from "./ReactUpdateQueue";
 
 export function createFiberRoot(
     containerInfo: Container,

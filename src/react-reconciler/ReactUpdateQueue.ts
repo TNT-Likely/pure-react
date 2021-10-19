@@ -18,6 +18,14 @@ export type Update<State> = {
     next: Update<State> | null
 }
 
+export type UpdateQueue<State> = {
+    baseState: State
+    firstBaseUpdate: Update<State> |null
+    lastBaseUpdate: Update<State> | null
+    shared: SharedQueue<State>
+    effects: Array<Update<State>> | null
+}
+
 // 创建更新对象
 export function createUpdate(eventTime: number, lane: Lane): Update<any> {
     const update = {
@@ -32,6 +40,21 @@ export function createUpdate(eventTime: number, lane: Lane): Update<any> {
     }
 
     return update
+}
+
+// 初始化更新队列
+export function initializeUpdateQueue<State>(fiber:Fiber):void {
+    const queue:UpdateQueue<State> = {
+        baseState: fiber.memoizedState,
+        firstBaseUpdate:null,
+        lastBaseUpdate: null,
+        shared: {
+            pending: null
+        },
+        effects: null
+    }
+
+    fiber.updateQueue = queue
 }
 
 // 更新塞入队列
