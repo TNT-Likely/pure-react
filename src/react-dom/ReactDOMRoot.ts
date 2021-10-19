@@ -1,5 +1,9 @@
 import { LegacyRoot } from "../react-reconciler/ReactRootTags";
 import { Container } from "./ReactDOMHostConfig";
+import { RootTag } from "../react-reconciler/ReactRootTags";
+import { enableEagerRootListeners } from "../shared/ReactFeatureFlags";
+import { COMMENT_NODE } from "./shared/HTMLNodeType";
+import { createContainer } from "../react-reconciler/ReactFiberReconciler";
 
 export type RootType = {
     render: (children: any) => void
@@ -12,7 +16,8 @@ export type RootOptions = {
     hydrationOptions?: {
         onHydrated?: (suspenseNode: Comment) => void
         onDeleted?: (suspenseNode: Comment) => void
-    }
+        mutableSources?: Array<any>
+    },
 }
 
 
@@ -21,13 +26,44 @@ export function createLegacyRoot(container: Container,
     return new ReactDOMBlockingRoot(container, LegacyRoot, options)
 }
 
-function ReactDOMBlockingRoot(
+function createRootImpl(
     container: Container,
-    tag: number,
+    tag: RootTag,
+    options: void |RootOptions
+) { 
+    // 是否注水
+    const hydrate = options != null && options.hydrate === true
+
+    // 注水回调
+    const hydrateCallbacks = (options != null && options.hydrationOptions) || null
+
+    const mutableSources = (options != null && options.hydrationOptions != null && options.hydrationOptions?.mutableSources) || null
+
+    const root = createContainer(container, tag, hydrate, hydrateCallbacks)
+    markContainerAsRoot(root.current, container)
+    const containerNodeType = container.nodeType
+
+    if (enableEagerRootListeners) {
+        const rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode:container
+        listenToAllSupportedEvents(rootContainerElement)
+    }
+
+    return root
+}
+
+declare class ReactDOMBlockingRoot {
+    constructor(container: Container, tag: RootTag, options: void| RootOptions)
+    render: () => void
+}
+
+function ReactDOMBlockingRoot(this: any, 
+    container: Container,
+    tag: RootTag,
     options: void | RootOptions
 ) {
-
+    this._internalRoot = createRootImpl(container, tag, options)
 }
+
 ReactDOMBlockingRoot.prototype.render = function () {
 
 }
