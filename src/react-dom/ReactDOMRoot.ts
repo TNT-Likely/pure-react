@@ -4,6 +4,7 @@ import { RootTag } from "../react-reconciler/ReactRootTags";
 import { enableEagerRootListeners } from "../shared/ReactFeatureFlags";
 import { COMMENT_NODE } from "./shared/HTMLNodeType";
 import { createContainer } from "../react-reconciler/ReactFiberReconciler";
+import { markContainerAsRoot } from "./ReactDOMComponentTree";
 
 export type RootType = {
     render: (children: any) => void
@@ -45,7 +46,7 @@ function createRootImpl(
 
     if (enableEagerRootListeners) {
         const rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode:container
-        listenToAllSupportedEvents(rootContainerElement)
+        // listenToAllSupportedEvents(rootContainerElement)
     }
 
     return root

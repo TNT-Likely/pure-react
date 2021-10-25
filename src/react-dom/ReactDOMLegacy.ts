@@ -1,8 +1,9 @@
 import { ROOT_ATTRIBUTE_NAME } from "./shared/DOMProperty"
 import { DOCUMENT_NODE, ELEMENT_NODE } from "./shared/HTMLNodeType"
-import {createLegacyRoot} from './ReactDOMRoot'
+import { createLegacyRoot } from './ReactDOMRoot'
 import { Container } from "./ReactDOMHostConfig"
 import { updateContainer } from "../react-reconciler/ReactFiberReconciler"
+import { getPublicRootInstance } from "../react-reconciler/ReactFiberReconciler"
 
 // 渲染主入口
 export function render(
@@ -36,27 +37,27 @@ function legacyRenderSubtreeIntoContainer(
 
         fiberRoot = root?._internalRoot
 
-        if (typeof callback  === 'function') {
+        if (typeof callback === 'function') {
             const originCallback = callback
-            callback = function() {
+            callback = function () {
                 const instance = getPublicRootInstance(fiberRoot)
                 originCallback.call(instance)
             }
         }
 
         // unbatchedUpdates(() => {
-            updateContainer(children, fiberRoot, parentComponent, callback)
+        updateContainer(children, fiberRoot, parentComponent, callback)
         // })
     } else {
         fiberRoot = root._internalRoot
         if (typeof callback === 'function') {
             const originCallback = callback
-            callback = function() {
+            callback = function () {
                 const instance = getPublicRootInstance(fiberRoot)
                 originCallback.call(instance)
             }
         }
-        
+
         updateContainer(children, fiberRoot, parentComponent, callback)
     }
 
@@ -79,7 +80,7 @@ function legacyCreateRootFromDOMContainer(
 
     return createLegacyRoot(
         container,
-        shouldHydrate?{hydrate: true}: undefined
+        shouldHydrate ? { hydrate: true } : undefined
     )
 }
 

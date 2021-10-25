@@ -2,6 +2,9 @@ const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
 
+const isRealReact = process.argv.find(i => i.includes('--port='))
+const realReactPort = isRealReact && isRealReact.split('=')[1]
+
 const entrys = {
     basic: 'src/basic/index.tsx'
 }
@@ -14,7 +17,7 @@ const entrysHtmlPlugin = Object.keys(entrys).map(key => {
     })
 })
 
-const port = 9000
+const port = realReactPort | 9000
 
 module.exports = {
     mode: 'development',
@@ -36,7 +39,9 @@ module.exports = {
 
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
-        plugins: [new TsconfigPathsPlugin()]
+        plugins: [new TsconfigPathsPlugin({
+            configFile: realReactPort ? 'tsconfig.base.json' : 'tsconfig.json'
+        })]
     },
 
     devServer: {
