@@ -2,6 +2,7 @@ import { Lane, Lanes } from "./ReactFiberLane";
 import { Fiber } from "./ReactInternalTypes";
 import { HostRoot } from "./ReactWorkTags";
 import { processUpdateQueue, cloneUpdateQueue } from './ReactUpdateQueue'
+import { reconcileChildFibers } from "./ReactChildFiber";
 
 export function beginWork(current: Fiber | null, workInProgress: Fiber, renderLanes: Lanes) {
     const updateLanes = workInProgress.lanes
@@ -36,5 +37,23 @@ function updateHostRoot(current, workInProgress: Fiber, renderLanes) {
     const nextChildren = nextState.element
     if (nextChildren === prevChildren) {
 
+    }
+
+    const root = workInProgress.stateNode
+    if (root.hydrate) {
+
+    } else {
+        reconcileChildren(current, workInProgress, nextChildren, renderLanes)
+    }
+
+    return workInProgress.child
+}
+
+// 调和儿子
+export function reconcileChildren(current:Fiber | null, workInProgress: Fiber, nextChildren: any, renderLanes: Lanes) {
+    if(current === null) {
+
+    } else {
+        workInProgress.child = reconcileChildFibers(workInProgress, current.child, nextChildren, renderLanes)
     }
 }

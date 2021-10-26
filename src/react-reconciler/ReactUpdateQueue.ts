@@ -93,7 +93,7 @@ export function cloneUpdateQueue<State>(current:Fiber, workInProgress: Fiber) {
             shared: currentQueue.shared,
             effects: currentQueue.effects
         }
-        
+
         workInProgress.updateQueue = clone
     }
 }
@@ -204,6 +204,7 @@ export function processUpdateQueue<State>(
             }
             update = update.next
             if (update === null) {
+                pendingQueue = queue.shared.pending
                 if (pendingQueue === null) {
                     break;
                 } else {
@@ -239,7 +240,21 @@ function getStateFromUpdate<State>(
     nextProps: any,
     instance: any
 ) {
-    let newState = prevState
+    switch(update.tag) {
+        case UpdateState:{
+            const payload = update.payload
+            let partialState
+            if (typeof payload === 'function') {
+                partialState = payload.call(instance, prevState, nextProps)
+            } else {
+                partialState = payload
+            }
 
-    return newState
+            if (partialState === null || partialState === undefined) {
+                return prevState
+            }
+
+            return Object.assign({}, prevState, partialState)
+        }
+    }
 }
