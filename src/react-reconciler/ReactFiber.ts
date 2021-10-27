@@ -3,7 +3,13 @@ import { Lanes, NoLanes } from "./ReactFiberLane";
 import { createFiberRoot } from "./ReactFiberRoot";
 import { Fiber } from "./ReactInternalTypes";
 import { RootTag } from "./ReactRootTags";
-import { HostRoot } from "./ReactWorkTags";
+import { ClassComponent, HostComponent, HostRoot, HostText, IndeterminateComponent } from "./ReactWorkTags";
+
+// 是否为类组件
+function shouldConstruct(Component: Function) {
+    const prototype = Component.prototype
+    return !!(prototype && prototype.isReactComponent)
+}
 
 export function createHostRootFiber(tag: RootTag) {
     return createFiber(HostRoot, null, null, 0)
@@ -100,6 +106,7 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
     return workInProgress
 }
 
+// 根据元素创建Fiber节点
 export function createFiberFromElement(
     element: ReactElement,
     mode: number,
@@ -115,6 +122,7 @@ export function createFiberFromElement(
     return fiber
 }
 
+// 根据类型和属性创建Fiber节点
 export function createFiberFromTypeAndProps(
     type: any,
     key: null | string,
@@ -123,11 +131,34 @@ export function createFiberFromTypeAndProps(
     mode: number,
     lanes: Lanes
 ): Fiber {
-    let fiberTag = 2
+    let fiberTag = IndeterminateComponent
     let resolvedType = type
+
+    if (typeof type === 'function') {
+        if (shouldConstruct(type)) {
+            fiberTag = ClassComponent
+        }
+    } else if (typeof type === 'string') {
+        fiberTag = HostComponent
+    } else {
+        // 先省略一下，后面补上
+        switch (type) {
+
+        }
+    }
 
     const fiber = createFiber(fiberTag, pendingProps, key, mode)
     fiber.elementType = type
+    fiber.lanes = lanes
+    fiber.type = resolvedType
+
+    return fiber
+}
+
+// 创建纯文本的Fiber节点
+export function createFiberFromText(content: string, mode: number, lanes: Lanes) {
+    const fiber = createFiber(HostText, content, null, mode)
+
     fiber.lanes = lanes
 
     return fiber
