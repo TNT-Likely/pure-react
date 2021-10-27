@@ -1,1 +1,1 @@
-export const enableEagerRootListeners = true;
+export const enableEagerRootListeners = true

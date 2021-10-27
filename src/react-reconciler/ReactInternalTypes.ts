@@ -1,6 +1,6 @@
-import { Interaction } from "../scheduler/Tracing";
-import { Lane, Lanes } from "./ReactFiberLane";
-import { RootTag } from "./ReactRootTags";
+import { Interaction } from '../scheduler/Tracing'
+import { Lane, Lanes } from './ReactFiberLane'
+import { RootTag } from './ReactRootTags'
 
 export type Fiber = {
     // fiber节点类型
@@ -83,7 +83,7 @@ type BaseFiberRootProperties = {
     mutableSourceEagerHydrationData?: Array<any> | null
 
     callbackNode: any,
-    callbackPriority:  number,
+    callbackPriority: number,
     eventTime: any,
     expirationTimes: any,
 

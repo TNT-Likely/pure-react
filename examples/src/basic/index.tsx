@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDom from 'react-dom'
 
 const App = () => {
-    return <>
+  return <>
         <div>
             hello, world
         </div>
@@ -10,4 +10,4 @@ const App = () => {
     </>
 }
 
-ReactDom.render(<App />, document.querySelector("#root"))
+ReactDom.render(<App />, document.querySelector('#root'))

@@ -1,7 +1,7 @@
-import { Lane, Lanes, NoLanes } from "./ReactFiberLane";
-import { Fiber } from "./ReactInternalTypes";
+import { Lane, Lanes, NoLanes } from './ReactFiberLane'
+import { Fiber } from './ReactInternalTypes'
 
-type Update<S,A> = {
+type Update<S, A> = {
     lane: Lane,
     action: A,
     eagerReducer: ((S, A) => S) | null,
@@ -21,7 +21,7 @@ export type Hook = {
     memoizedState: any,
     baseState: any,
     baseQueue: Update<any, any> | null,
-    queue: UpdateQueue<any,any> | null,
+    queue: UpdateQueue<any, any> | null,
     next: Hook | null
 }
 
@@ -30,28 +30,28 @@ let currentlyRenderingFiber:Fiber|null = null
 let currentHook: Hook | null = null
 let workInProgressHook: Hook | null = null
 
-export function renderWithHooks<Props, SecondArg>(
-    current: Fiber|null,
-    workInProgress: Fiber,
-    Component: (p: Props, arg: SecondArg) => any,
-    props: Props,
-    secondArg: SecondArg,
-    nextRenderLanes: Lanes
+export function renderWithHooks<Props, SecondArg> (
+  current: Fiber|null,
+  workInProgress: Fiber,
+  Component: (p: Props, arg: SecondArg) => any,
+  props: Props,
+  secondArg: SecondArg,
+  nextRenderLanes: Lanes
 ) {
-    renderLanes = nextRenderLanes
-    currentlyRenderingFiber = workInProgress
+  renderLanes = nextRenderLanes
+  currentlyRenderingFiber = workInProgress
 
-    workInProgress.memoizedState = null
-    workInProgress.updateQueue = null
-    workInProgress.lanes = NoLanes
+  workInProgress.memoizedState = null
+  workInProgress.updateQueue = null
+  workInProgress.lanes = NoLanes
 
-    let children = Component(props, secondArg)
+  const children = Component(props, secondArg)
 
-    renderLanes = NoLanes
-    currentlyRenderingFiber = null
+  renderLanes = NoLanes
+  currentlyRenderingFiber = null
 
-    currentHook = null
-    workInProgressHook = null
+  currentHook = null
+  workInProgressHook = null
 
-    return children
+  return children
 }

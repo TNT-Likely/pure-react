@@ -13,9 +13,9 @@ export type Props = {
 }
 
 // 是否应该设置文本内容
-export function shouldSetTextContent(type: string, props: Props): boolean {
-    return (
-        type === 'textarea' ||
+export function shouldSetTextContent (type: string, props: Props): boolean {
+  return (
+    type === 'textarea' ||
         type === 'option' ||
         type === 'noscript' ||
         typeof props.children === 'string' ||
@@ -23,5 +23,5 @@ export function shouldSetTextContent(type: string, props: Props): boolean {
         (typeof props.dangerouslySetInnerHTML === 'object' &&
             props.dangerouslySetInnerHTML !== null &&
             props.dangerouslySetInnerHTML.__html != null)
-    )
+  )
 }

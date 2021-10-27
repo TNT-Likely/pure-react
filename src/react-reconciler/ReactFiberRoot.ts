@@ -1,37 +1,37 @@
-import { Container } from "../react-dom/ReactDOMHostConfig";
-import { SuspenseHydrationCallbacks } from "./ReactInternalTypes";
-import { RootTag } from "./ReactRootTags";
-import { NoLanes } from "./ReactFiberLane";
-import { createHostRootFiber, TFiberNode } from "./ReactFiber";
-import { initializeUpdateQueue } from "./ReactUpdateQueue";
+import { Container } from '../react-dom/ReactDOMHostConfig'
+import { SuspenseHydrationCallbacks } from './ReactInternalTypes'
+import { RootTag } from './ReactRootTags'
+import { NoLanes } from './ReactFiberLane'
+import { createHostRootFiber, TFiberNode } from './ReactFiber'
+import { initializeUpdateQueue } from './ReactUpdateQueue'
 
-export function createFiberRoot(
-    containerInfo: Container,
-    tag: RootTag,
-    hydrate: boolean,
-    hydrateCallbacks: null | SuspenseHydrationCallbacks
+export function createFiberRoot (
+  containerInfo: Container,
+  tag: RootTag,
+  hydrate: boolean,
+  hydrateCallbacks: null | SuspenseHydrationCallbacks
 ) {
-    // 创建fiber根节点
-    const root = new FiberRootNode(containerInfo, tag, hydrate)
+  // 创建fiber根节点
+  const root = new FiberRootNode(containerInfo, tag, hydrate)
 
-    root.hydrationCallbacks = hydrateCallbacks
+  root.hydrationCallbacks = hydrateCallbacks
 
-    const uninitializedFiber = createHostRootFiber(tag)
-    root.current = uninitializedFiber
+  const uninitializedFiber = createHostRootFiber(tag)
+  root.current = uninitializedFiber
 
-    uninitializedFiber.stateNode = root
+  uninitializedFiber.stateNode = root
 
-    initializeUpdateQueue(uninitializedFiber)
+  initializeUpdateQueue(uninitializedFiber)
 
-    return root
+  return root
 }
 
 class FiberRootNode {
-    constructor(containerInfo: Container, tag:RootTag, hydrate: boolean) {
-        this.containerInfo = containerInfo
-        this.tag = tag
-        this.hydrate = hydrate
-    }
+  constructor (containerInfo: Container, tag:RootTag, hydrate: boolean) {
+    this.containerInfo = containerInfo
+    this.tag = tag
+    this.hydrate = hydrate
+  }
 
     tag: RootTag
     containerInfo: Container
@@ -57,5 +57,4 @@ class FiberRootNode {
     finishedLanes = NoLanes
 
     entangledLanes = NoLanes
-
 }

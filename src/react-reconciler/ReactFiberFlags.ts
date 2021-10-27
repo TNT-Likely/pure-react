@@ -1,1 +1,1 @@
-export const Placement = /*                    */ 0b000000000000000010;
+export const Placement = /*                    */ 0b000000000000000010

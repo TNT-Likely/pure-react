@@ -1,7 +1,7 @@
-import { render } from "./ReactDOMLegacy"
+import { render } from './ReactDOMLegacy'
 
 const ReactDom = {
-    render
+  render
 }
 
 export default ReactDom
