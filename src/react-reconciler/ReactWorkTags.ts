@@ -9,8 +9,17 @@ export const Fragment = 7
 export const Mode = 8
 export const ContextConsumer = 9
 export const ContextProvider = 10
-
+export const ForwardRef = 11
+export const Profiler = 12
+export const SuspenseComponent = 13
 export const MemoComponent = 14
 export const SimpleMemoComponent = 15
-
+export const LazyComponent = 16
+export const IncompleteClassComponent = 17
+export const DehydratedFragment = 18
+export const SuspenseListComponent = 19
+export const FundamentalComponent = 20
+export const ScopeComponent = 21
 export const Block = 22
+export const OffscreenComponent = 23
+export const LegacyHiddenComponent = 24

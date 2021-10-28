@@ -1,14 +1,26 @@
 import ReactCurrentOwner from '../react/ReactCurrentOwner'
 import { Lane, Lanes, NoLanes, SyncLane } from './ReactFiberLane'
-import { Fiber } from './ReactInternalTypes'
+import { Fiber, FiberRoot } from './ReactInternalTypes'
 import { HostRoot } from './ReactWorkTags'
 import { beginWork } from './ReactFiberBeginWork'
 import { createWorkInProgress } from './ReactFiber'
+import { Hydrating, Incomplete, NoFlags, Placement, Update } from './ReactFiberFlags'
+import { commitPlacement } from './ReactFiberCommitWork'
+import { completeWork } from './ReactFiberCompleteWork'
+
+type RootExitStatus = 0 | 1 | 2 | 3 | 4 | 5;
+const RootIncomplete = 0
+const RootFatalErrored = 1
+const RootErrored = 2
+const RootSuspended = 3
+const RootSuspendedWithDelay = 4
+const RootCompleted = 5
 
 let workInProgressRoot: any | null = null
 let workInProgress: any = null
 let mostRecentlyUpdatedRoot: any = null
 let workInProgressRootRenderLanes: Lane = NoLanes
+let workInProgressRootExitStatus: RootExitStatus = RootIncomplete
 export const subtreeRenderLanes = NoLanes
 
 // 请求更新优先级
@@ -71,8 +83,112 @@ function performSyncWorkOnRoot (root) {
   root.finishedWork = finishedWork
   root.finishedLanes = lanes
   commitRoot(root)
-  ensureRootIsScheduled(root, 0)
+  // ensureRootIsScheduled(root, 0)
   return null
+}
+
+function commitRoot (root:FiberRoot) {
+  // const renderPriorityLevel =
+  // 先省略下优先级
+  commitRootImpl(root, 97)
+}
+
+// 提交更新
+function commitRootImpl (root: FiberRoot, renderPriorityLevel: number) {
+  const finishedWork = root.finishedWork as Fiber
+  const lanes = root.finishedLanes
+
+  // if (finishedWork === null) {
+  //   markCommitStopped()
+  //   return null
+  // }
+
+  root.finishedWork = null
+  root.finishedLanes = NoLanes
+
+  root.callbackNode = null
+
+  if (root === workInProgressRoot) {
+    workInProgressRoot = null
+    workInProgress = null
+    workInProgressRootRenderLanes = NoLanes
+  }
+
+  // const subtreeHasEffects = (finishedWork?.subtreeFlags & ())
+  ReactCurrentOwner.current = null
+  commitBeforeMutationEffects(finishedWork)
+  commitMutationEffects(finishedWork, root, renderPriorityLevel)
+  root.current = finishedWork as Fiber
+}
+
+function commitBeforeMutationEffects (firstChild: Fiber) {
+  let fiber: Fiber | null = firstChild
+  while (fiber !== null) {
+    if (fiber.child !== null) {
+      commitBeforeMutationEffects(fiber.child)
+    }
+
+    try {
+      commitBeforeMutationEffectsImpl(fiber)
+    } catch (error) {
+      console.error(error)
+    }
+
+    fiber = fiber.sibling
+  }
+}
+
+function commitBeforeMutationEffectsImpl (fiber: Fiber) {
+  const current = fiber.alternate
+  const flags = fiber.flags
+}
+
+function commitMutationEffects (
+  firstChild:Fiber,
+  root:FiberRoot,
+  renderPriorityLevel: number
+) {
+  let fiber: Fiber | null = firstChild
+  while (fiber !== null) {
+    const deletions = fiber.deletions
+
+    if (deletions !== null) {
+
+    }
+
+    if (fiber.child !== null) {
+      commitMutationEffects(fiber.child, root, renderPriorityLevel)
+    }
+
+    try {
+      commitMutationEffectsImpl(fiber, root, renderPriorityLevel)
+    } catch (error) {
+      captureCommitPhaseError(fiber, fiber.return, error)
+    }
+
+    fiber = fiber.sibling
+  }
+}
+
+function commitMutationEffectsImpl (fiber: Fiber, root: FiberRoot, renderPriorityLevel: number) {
+  const flags = fiber.flags
+  // if (flags & ContentReset) {
+
+  // }
+
+  const primaryFlags = flags & (Placement | Update | Hydrating)
+
+  switch (primaryFlags) {
+    case Placement: {
+      commitPlacement(fiber)
+      fiber.flags &= ~Placement
+      break
+    }
+  }
+}
+
+function captureCommitPhaseError (sourceFiber: Fiber, nearestMountedAncestor: Fiber | null, error: any) {
+
 }
 
 function renderRootSync (root: any, lanes: Lanes) {
@@ -129,6 +245,40 @@ function performUnitOfWork (unitOfWork: Fiber): void {
   ReactCurrentOwner.current = null
 }
 
+function completeUnitOfWork (unitOfWork: Fiber): void {
+  let completedWork = unitOfWork
+  do {
+    const current = completedWork.alternate
+    const returnFiber = completedWork.return
+
+    // 检查下是否有暂时抛出的
+    if ((completedWork.flags & Incomplete) === NoFlags) {
+      const next = completeWork(current, completedWork, subtreeRenderLanes)
+      if (next !== null) {
+        workInProgress = next
+        return
+      }
+    } else {
+
+    }
+
+    // 检查兄弟节点
+    const siblingFiber = completedWork.sibling
+    if (siblingFiber !== null) {
+      workInProgress = siblingFiber
+      return
+    }
+
+    completedWork = returnFiber as Fiber
+    workInProgress = completedWork
+  } while (completedWork !== null)
+
+  if (workInProgressRootExitStatus === RootIncomplete) {
+    workInProgressRootExitStatus = RootCompleted
+  }
+}
+
 function handleError (root, thrownValue): void {
   workInProgress = null
+  console.error(root, thrownValue)
 }
