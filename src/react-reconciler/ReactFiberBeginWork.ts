@@ -1,11 +1,12 @@
 import { Lane, Lanes } from './ReactFiberLane'
-import { Fiber } from './ReactInternalTypes'
+import { Fiber, FiberRoot } from './ReactInternalTypes'
 import { HostRoot, IndeterminateComponent, FunctionComponent, HostComponent } from './ReactWorkTags'
 import { processUpdateQueue, cloneUpdateQueue } from './ReactUpdateQueue'
 import { reconcileChildFibers, mountChildFibers } from './ReactChildFiber'
 import { Placement } from './ReactFiberFlags'
 import { renderWithHooks } from './ReactFiberHooks'
 import { shouldSetTextContent } from './ReactDomHostConfig'
+import { pushHostContainer } from './ReactFiberHostContext'
 
 // 挂载混合组件
 function mountIndeterminateComponent (
@@ -91,7 +92,20 @@ function updateHostComponent (
   return workInProgress.child
 }
 
+function pushHostRootContext (workInProgress) {
+  const root = (workInProgress.stateNode as FiberRoot)
+
+  // if (root.pendingContext) {
+  //   pushTopLevelContextObject(workInProgress, root.pendingContext, root.pendingContext !== root.context)
+  // } else if (root.context) {
+  //   pushTopLevelContextObject(workInProgress, root.context, false)
+  // }
+
+  pushHostContainer(workInProgress, root.containerInfo)
+}
+
 function updateHostRoot (current, workInProgress: Fiber, renderLanes) {
+  pushHostRootContext(workInProgress)
   const updateQueue = workInProgress.updateQueue
 
   const nextProps = workInProgress.pendingProps
