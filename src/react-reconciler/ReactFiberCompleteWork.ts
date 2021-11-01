@@ -53,6 +53,8 @@ function completeWork (
         return null
       }
     }
+    default:
+      return null
   }
 }
 

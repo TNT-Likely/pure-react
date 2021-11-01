@@ -13,6 +13,7 @@ function ChildReconciler (shouldTrackSideEffects) {
     return newFiber
   }
 
+  // 单元素节点
   function reconcileSingleElement (
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -37,11 +38,14 @@ function ChildReconciler (shouldTrackSideEffects) {
       }
     }
 
+    // 如果元素是fragment类型
     if (element.type === REACT_FRAGMENT_TYPE) {
-
+      return {} as Fiber
     } else {
       const created = createFiberFromElement(element, returnFiber.mode, lanes)
       // created.ref = coerceRef(returnFiber, currentFirstChild, element)
+
+      // 挂载父节点
       created.return = returnFiber
 
       return created
@@ -77,7 +81,7 @@ function ChildReconciler (shouldTrackSideEffects) {
     newFiber: Fiber,
     lastPlacedIndex: number,
     newIndex: number
-  ):number {
+  ): number {
     newFiber.index = newIndex
     // if (!shouldTrackSideEffects) {
     //     return lastPlacedIndex
@@ -100,6 +104,7 @@ function ChildReconciler (shouldTrackSideEffects) {
     const oldFiber = currentFirstChild
     let lastPlacedIndex = 0
     let newIdx = 0
+
     const newOldFiber = null
 
     if (oldFiber === null) {
@@ -115,6 +120,7 @@ function ChildReconciler (shouldTrackSideEffects) {
         if (previousNewFiber === null) {
           resultingFirstChild = newFiber
         } else {
+          // 挂载兄弟节点
           previousNewFiber.sibling = newFiber
         }
 
@@ -127,7 +133,18 @@ function ChildReconciler (shouldTrackSideEffects) {
     return resultingFirstChild
   }
 
-  // 调和fiber子节点
+  function reconcileSingleTextNode (
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    textContent: string,
+    lanes: Lanes
+  ): Fiber {
+    const created = createFiberFromText(textContent, returnFiber.mode, lanes)
+    created.return = returnFiber
+    return created
+  }
+
+  // 计算子fiber节点
   function reconcileChildFibers (
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -135,15 +152,10 @@ function ChildReconciler (shouldTrackSideEffects) {
     lanes: Lanes
   ): Fiber | null {
     const isUnkeyedTopLevelFragment = typeof newChild === 'object' && newChild !== null && newChild.type === REACT_FRAGMENT_TYPE &&
-            newChild.key === null
+      newChild.key === null
 
     if (isUnkeyedTopLevelFragment) {
       newChild = newChild.props.children
-    }
-
-    // 如果子节点是数组
-    if (Array.isArray(newChild)) {
-      return reconcileChildrenArray(returnFiber, currentFirstChild, newChild, lanes)
     }
 
     // 如果子节点是对象
@@ -161,6 +173,16 @@ function ChildReconciler (shouldTrackSideEffects) {
             )
           )
       }
+    }
+
+    // 如果子节点是字符串或数字
+    if (typeof newChild === 'string' || typeof newChild === 'number') {
+      return placeSingleChild(reconcileSingleTextNode(returnFiber, currentFirstChild, '' + newChild, lanes))
+    }
+
+    // 如果子节点是数组
+    if (Array.isArray(newChild)) {
+      return reconcileChildrenArray(returnFiber, currentFirstChild, newChild, lanes)
     }
 
     return null

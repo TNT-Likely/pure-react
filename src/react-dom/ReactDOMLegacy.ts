@@ -1,6 +1,6 @@
 import { ROOT_ATTRIBUTE_NAME } from './shared/DOMProperty'
 import { DOCUMENT_NODE, ELEMENT_NODE } from './shared/HTMLNodeType'
-import { createLegacyRoot } from './ReactDOMRoot'
+import { createLegacyRoot, RootType } from './ReactDOMRoot'
 import { Container } from './ReactDOMHostConfig'
 import { updateContainer, getPublicRootInstance } from '../react-reconciler/ReactFiberReconciler'
 
@@ -29,6 +29,7 @@ function legacyRenderSubtreeIntoContainer (
   let root = container._reactRootContainer
   let fiberRoot
   if (!root) {
+    // 创建fiber根节点
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,
       forceHydrate
@@ -64,9 +65,15 @@ function legacyRenderSubtreeIntoContainer (
 }
 
 function legacyCreateRootFromDOMContainer (
-  container: any,
+  container: Container,
   forceHydrate: boolean
-) {
+): RootType {
+  /**
+   * 是否应该触发注水
+   * 注水的概念 https://reactjs.org/docs/react-dom.html#hydrate
+   * 简单来说就是客户端在应对由ReactDOMServer渲染出来的html内容判断下是否可以复用
+   *
+   */
   const shouldHydrate = forceHydrate || shouldHydrateDueToLegacyHeuristic(container)
 
   if (!shouldHydrate) {

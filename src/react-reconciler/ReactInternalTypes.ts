@@ -110,3 +110,10 @@ type SuspenseCallbackOnlyFiberRootProperties = {
 }
 
 export type FiberRoot = BaseFiberRootProperties & ProfilingOnlyFiberRootProperties & SuspenseCallbackOnlyFiberRootProperties
+
+export type BaseStateAction<T> = ((T) => T) | T
+export type Dispatch<T> = (val: T) => void
+
+export type Dispatcher = {
+    useState<T>(initialState: (() => T) | T): [T, Dispatch<BaseStateAction<T>>]
+}

@@ -55,6 +55,7 @@ export function beginWork (current: Fiber | null, workInProgress: Fiber, renderL
 
   switch (workInProgress.tag) {
     case IndeterminateComponent: {
+      // 挂载不确定的组件
       return mountIndeterminateComponent(
         current,
         workInProgress,
@@ -62,9 +63,9 @@ export function beginWork (current: Fiber | null, workInProgress: Fiber, renderL
         renderLanes
       )
     }
-    case HostRoot:
+    case HostRoot: // 更新宿主节点
       return updateHostRoot(current, workInProgress, renderLanes)
-    case HostComponent:
+    case HostComponent: // 更新宿主组件
       return updateHostComponent(current, workInProgress, renderLanes)
   }
 }
@@ -112,7 +113,10 @@ function updateHostRoot (current, workInProgress: Fiber, renderLanes) {
   const prevState = workInProgress.memoizedProps
   const prevChildren = prevState !== null ? prevState.element : null
 
+  // 克隆更新队列
   cloneUpdateQueue(current, workInProgress)
+
+  // 处理更新队列
   processUpdateQueue(workInProgress, nextProps, null, renderLanes)
 
   const nextState = workInProgress.memoizedState
@@ -126,6 +130,7 @@ function updateHostRoot (current, workInProgress: Fiber, renderLanes) {
   if (root.hydrate) {
 
   } else {
+    // 这里主要是计算出Fiber子节点
     reconcileChildren(current, workInProgress, nextChildren, renderLanes)
   }
 

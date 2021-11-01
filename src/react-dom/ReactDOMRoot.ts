@@ -6,29 +6,47 @@ import { createContainer } from '../react-reconciler/ReactFiberReconciler'
 import { markContainerAsRoot } from './ReactDOMComponentTree'
 
 export type RootType = {
-    render: (children: any) => void
-    unmount: () => void
-    _internalRoot: any
+  render: (children: any) => void
+  unmount: () => void
+  _internalRoot: any
 }
 
 export type RootOptions = {
-    hydrate?: boolean
-    hydrationOptions?: {
-        onHydrated?: (suspenseNode: Comment) => void
-        onDeleted?: (suspenseNode: Comment) => void
-        mutableSources?: Array<any>
-    },
+  hydrate?: boolean
+  hydrationOptions?: {
+    onHydrated?: (suspenseNode: Comment) => void
+    onDeleted?: (suspenseNode: Comment) => void
+    mutableSources?: Array<any>
+  },
 }
 
+// 创建根节点
 export function createLegacyRoot (container: Container,
-  options?: RootOptions) {
+  options?: RootOptions): RootType {
   return new ReactDOMBlockingRoot(container, LegacyRoot, options)
 }
 
+class ReactDOMBlockingRoot {
+  constructor (container: Container, tag: RootTag, options: void | RootOptions) {
+    this._internalRoot = createRootImpl(container, tag, options)
+  }
+
+  _internalRoot = {}
+
+  render () {
+
+  }
+
+  unmount () {
+
+  }
+}
+
+// 创建根节点模板
 function createRootImpl (
   container: Container,
   tag: RootTag,
-  options: void |RootOptions
+  options: void | RootOptions
 ) {
   // 是否注水
   const hydrate = options != null && options.hydrate === true
@@ -36,33 +54,18 @@ function createRootImpl (
   // 注水回调
   const hydrateCallbacks = (options != null && options.hydrationOptions) || null
 
-  const mutableSources = (options != null && options.hydrationOptions != null && options.hydrationOptions?.mutableSources) || null
+  // const mutableSources = (options != null && options.hydrationOptions != null && options.hydrationOptions?.mutableSources) || null
 
+  // 创建根节点由此进入
   const root = createContainer(container, tag, hydrate, hydrateCallbacks)
   markContainerAsRoot(root.current, container)
-  const containerNodeType = container.nodeType
+  // const containerNodeType = container.nodeType
 
+  // 下面是一些事件监听
   if (enableEagerRootListeners) {
-    const rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode : container
+    // const rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode : container
     // listenToAllSupportedEvents(rootContainerElement)
   }
 
   return root
-}
-
-declare class ReactDOMBlockingRoot {
-  constructor(container: Container, tag: RootTag, options: void| RootOptions)
-    render: () => void
-}
-
-function ReactDOMBlockingRoot (this: any,
-  container: Container,
-  tag: RootTag,
-  options: void | RootOptions
-) {
-  this._internalRoot = createRootImpl(container, tag, options)
-}
-
-ReactDOMBlockingRoot.prototype.render = function () {
-
 }

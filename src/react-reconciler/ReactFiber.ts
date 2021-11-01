@@ -11,6 +11,7 @@ function shouldConstruct (Component: Function) {
   return !!(prototype && prototype.isReactComponent)
 }
 
+// 创建宿主根fiber节点
 export function createHostRootFiber (tag: RootTag) {
   return createFiber(HostRoot, null, null, 0)
 }

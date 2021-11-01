@@ -1,2 +1,2 @@
 
-export const ROOT_ATTRIBUTE_NAME = 'data-reactroot';
+export const ROOT_ATTRIBUTE_NAME = 'data-reactroot'

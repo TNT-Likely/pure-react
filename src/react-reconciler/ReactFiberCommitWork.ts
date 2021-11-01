@@ -4,7 +4,7 @@ import { Fiber } from './ReactInternalTypes'
 import { DehydratedFragment, FundamentalComponent, HostComponent, HostPortal, HostRoot, HostText } from './ReactWorkTags'
 
 // 获取父Fiber节点
-function getHostParentFiber (fiber: Fiber): Fiber {
+function getHostParentFiber (fiber: Fiber) {
   let parent = fiber.return
   while (parent !== null) {
     if (isHostParent(parent)) {
@@ -52,7 +52,7 @@ function getHostSibling (fiber: Fiber) {
 }
 
 function commitPlacement (finishedWork: Fiber): void {
-  const parentFiber = getHostParentFiber(finishedWork)
+  const parentFiber = getHostParentFiber(finishedWork) as Fiber
 
   let parent
   let isContainer

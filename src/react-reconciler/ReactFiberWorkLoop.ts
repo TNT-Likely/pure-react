@@ -42,6 +42,7 @@ export function scheduleUpdateOnFiber (fiber: Fiber, lane: Lane, eventTime: numb
   }
 
   // if (lane === SyncLane) {
+  // 开始根节点的同步工作
   performSyncWorkOnRoot(root)
   // } else {
 
@@ -192,6 +193,7 @@ function captureCommitPhaseError (sourceFiber: Fiber, nearestMountedAncestor: Fi
 }
 
 function renderRootSync (root: any, lanes: Lanes) {
+  // 如果工作根节点与当前节点不一样或者优先级不一样, 需要准备下
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
     prepareFreshStack(root, lanes)
   }
@@ -219,7 +221,10 @@ function prepareFreshStack (root: any, lanes: Lanes) {
 
   //     cancelTimeout(timeoutHandle)
   // }
+
   workInProgressRoot = root
+
+  // 创建工作进程
   workInProgress = createWorkInProgress(root.current, null)
 }
 
@@ -232,10 +237,12 @@ function workLoopSync () {
 function performUnitOfWork (unitOfWork: Fiber): void {
   const current = unitOfWork.alternate
 
+  // 开始beginwork阶段，实质是找寻子节点
   const next = beginWork(current, unitOfWork, subtreeRenderLanes)
 
   unitOfWork.memoizedProps = unitOfWork.pendingProps
 
+  // 找不到子节点去进行compleWork阶段
   if (next === null) {
     completeUnitOfWork(unitOfWork)
   } else {
