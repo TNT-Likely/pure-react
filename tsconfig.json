@@ -12,6 +12,10 @@
     "forceConsistentCasingInFileNames": true,        /* Disallow inconsistently-cased references to the same file. */
     "noImplicitAny": false,
     "declaration": true,
-    "outDir": "dist/types"
+    "outDir": "dist/types",
+    "baseUrl": "./",
+    "paths": {
+      "shared": ["src/shared/*"]
+    }
   }
 }

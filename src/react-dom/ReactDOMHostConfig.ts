@@ -75,6 +75,29 @@ export function createElement (type: string, props: object, rootContainerElement
 
   return domElement
 }
+// 创建文本实例
+export function createTextInstance (
+  text: string,
+  rootContainerInstance: Container,
+  hostContext: string,
+  internalInstanceHandle: Object
+):Text {
+  const textNode = createTextNode(text, rootContainerInstance)
+  return textNode
+}
+
+// 创建文本节点
+export function createTextNode (text: string, rootContainerElement: Element | Document):Text {
+  return getOwnerDocumentFromRootContainer(rootContainerElement).createTextNode(text)
+}
+
+// 添加初始化的子节点
+export function appendInitialChild (
+  parentInstance: Element,
+  child: Element | Text
+) {
+  parentInstance.appendChild(child)
+}
 
 export function getRootHostContext (rootContainerInstance: Container):string {
   let type

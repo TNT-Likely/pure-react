@@ -1,6 +1,6 @@
 import { Lane, Lanes } from './ReactFiberLane'
 import { Fiber, FiberRoot } from './ReactInternalTypes'
-import { HostRoot, IndeterminateComponent, FunctionComponent, HostComponent } from './ReactWorkTags'
+import { HostRoot, IndeterminateComponent, FunctionComponent, HostComponent, HostText } from './ReactWorkTags'
 import { processUpdateQueue, cloneUpdateQueue } from './ReactUpdateQueue'
 import { reconcileChildFibers, mountChildFibers } from './ReactChildFiber'
 import { Placement } from './ReactFiberFlags'
@@ -67,7 +67,17 @@ export function beginWork (current: Fiber | null, workInProgress: Fiber, renderL
       return updateHostRoot(current, workInProgress, renderLanes)
     case HostComponent: // 更新宿主组件
       return updateHostComponent(current, workInProgress, renderLanes)
+    case HostText: // 更新文本节点
+      return updateHostText(current, workInProgress, renderLanes)
   }
+}
+
+function updateHostText (
+  current: Fiber | null,
+  workInProgress: Fiber,
+  renderLanes: Lanes
+) {
+  return null
 }
 
 function updateHostComponent (

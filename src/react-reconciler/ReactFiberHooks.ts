@@ -1,7 +1,9 @@
-import ReactCurrentDispatcher from '../react/ReactCurrentDispatcher'
+import ReactSharedInternal from '../shared/ReactSharedInternal'
 import { Lane, Lanes, NoLanes } from './ReactFiberLane'
 import { scheduleUpdateOnFiber } from './ReactFiberWorkLoop'
 import { BaseStateAction, Dispatch, Dispatcher, Fiber } from './ReactInternalTypes'
+
+const { ReactCurrentDispatcher } = ReactSharedInternal
 
 type Update<S, A> = {
     lane: Lane,
@@ -158,7 +160,7 @@ export function renderWithHooks<Props, SecondArg> (
   workInProgress.lanes = NoLanes
 
   // hooks执行者注册
-  ReactCurrentDispatcher.current = current === null || current.memoizedState === null ? HooksDispatcherOnMount : HooksDispatcherOnUpdate
+  ReactCurrentDispatcher.current = (current === null || current.memoizedState === null ? HooksDispatcherOnMount : HooksDispatcherOnUpdate)
 
   const children = Component(props, secondArg)
 

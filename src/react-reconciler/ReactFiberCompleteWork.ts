@@ -1,8 +1,44 @@
 import { Lanes } from './ReactFiberLane'
 import { Fiber } from './ReactInternalTypes'
-import { Fragment, FunctionComponent, HostComponent, HostRoot, IndeterminateComponent } from './ReactWorkTags'
+import { Fragment, FunctionComponent, FundamentalComponent, HostComponent, HostPortal, HostRoot, HostText, IndeterminateComponent } from './ReactWorkTags'
 import { getRootHostContainer, getHostContext } from './ReactFiberHostContext'
-import { createInstance, finalizeInitialChildren } from '../react-dom/ReactDOMHostConfig'
+import { createInstance, createTextInstance, finalizeInitialChildren, appendInitialChild } from '../react-dom/ReactDOMHostConfig'
+
+const appendAllChildren = function (
+  parent: Element,
+  workInProgress: Fiber,
+  needsVisibilityToggle: boolean,
+  isHidden: boolean
+) {
+  const node = workInProgress.child
+  while (node !== null) {
+    if (node.tag === HostComponent || node.tag === HostText) {
+      appendInitialChild(parent, node.stateNode)
+    } else if (node.tag === FundamentalComponent) {
+      appendInitialChild(parent, node.stateNode.instance)
+    } else if (node.tag === HostPortal) {
+
+    } else if (node.child !== null) {
+      node.child.return = node
+      node = node.child
+      continue
+    }
+
+    if (node === workInProgress) {
+      return
+    }
+
+    while (node.sibling === null) {
+      if (node.return === null || node.return === workInProgress) {
+        return
+      }
+      node = node?.return
+    }
+
+    node.sibling.return = node.return
+    node = node.sibling
+  }
+}
 
 function completeWork (
   current: Fiber | null,
@@ -42,13 +78,26 @@ function completeWork (
         const currentHostContext = getHostContext()
 
         const instance = createInstance(type, newProps, rootContainerInstance, currentHostContext, workInProgress)
-        // appendAllChildren(instance, workInProgress, false, false)
+        appendAllChildren(instance, workInProgress, false, false)
         workInProgress.stateNode = instance
 
         if (finalizeInitialChildren(instance, type, newProps, rootContainerInstance, currentHostContext)) {
           // markUpdate(workInProgress)
         }
 
+        bubbleProperties(workInProgress)
+        return null
+      }
+      break
+    }
+    case HostText: {
+      const rootContainerInstance = getRootHostContainer()
+      const currentHostContext = getHostContext()
+      if (current !== null && workInProgress.stateNode !== null) {
+        // updateHostText()
+      } else {
+        const instance = createTextInstance(newProps, rootContainerInstance, currentHostContext, workInProgress)
+        workInProgress.stateNode = instance
         bubbleProperties(workInProgress)
         return null
       }
