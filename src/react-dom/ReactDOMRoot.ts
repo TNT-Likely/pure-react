@@ -63,8 +63,8 @@ function createRootImpl (
 
   // 下面是一些事件监听
   if (enableEagerRootListeners) {
-    // const rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode : container
-    // listenToAllSupportedEvents(rootContainerElement)
+    const rootContainerElement = container.nodeType === COMMENT_NODE ? container.parentNode : container
+    listenToAllSupportedEvents(rootContainerElement)
   }
 
   return root

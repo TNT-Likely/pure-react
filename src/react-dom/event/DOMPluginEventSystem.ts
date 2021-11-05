@@ -1,0 +1,103 @@
+import { allNativeEvents } from './EventRegistry'
+import { DOMEventName } from './DomEventNames'
+import { getEventListenerSet } from '../ReactDOMComponentTree'
+
+const listeningMarker = '_reactLisening' + Math.random().toString(36).slice(2)
+
+// 媒体事件
+export const mediaEventTypes: Array<DOMEventName> = [
+  'abort',
+  'canplay',
+  'canplaythrough',
+  'durationchange',
+  'emptied',
+  'encrypted',
+  'ended',
+  'error',
+  'loadeddata',
+  'loadedmetadata',
+  'loadstart',
+  'pause',
+  'play',
+  'playing',
+  'progress',
+  'ratechange',
+  'seeked',
+  'seeking',
+  'stalled',
+  'suspend',
+  'timeupdate',
+  'volumechange',
+  'waiting'
+]
+
+// 不支持委托的事件
+export const nonDelegatedEvents: Set<DOMEventName> = new Set([
+  'cancel',
+  'close',
+  'invalid',
+  'load',
+  'scroll',
+  'toggle',
+
+  ...mediaEventTypes
+])
+
+/** 监听所有支持的事件 */
+export function listenToAllSupportedEvents (rootContainerElement: EventTarget) {
+  if (rootContainerElement[listeningMarker]) return
+
+  rootContainerElement[listeningMarker] = true
+
+  allNativeEvents.forEach(domEventName => {
+    if (nonDelegatedEvents.has(domEventName)) {
+      listenToNativeEvent(
+        domEventName,
+        false,
+        rootContainerElement,
+        null
+      )
+    } else {
+      listenToNativeEvent(
+        domEventName,
+        true,
+        rootContainerElement,
+        null
+      )
+    }
+  })
+}
+
+/** 监听原生事件 */
+export function listenToNativeEvent (
+  domEventName: DOMEventName,
+  isCapturePhaseListener: boolean,
+  rootContainerElement: EventTarget,
+  targetElement: Element | null,
+  eventSystemFlags: number = 0
+) {
+  const target = targetElement as EventTarget
+
+  const listenerSet = getEventListenerSet(target)
+  const listenerSetKey = getListenerSetKey(domEventName, isCapturePhaseListener)
+
+  if (!listenerSet.has(listenerSetKey)) {
+    addTrappedEventListener(target, domEventName, eventSystemFlags, isCapturePhaseListener)
+    listenerSet.add(listenerSetKey)
+  }
+}
+
+/** 添加受限的事件监听 */
+function addTrappedEventListener (
+  targetContainer: EventTarget,
+  domEventName: DOMEventName,
+  eventSystemFlags: number,
+  isCapturePhaseListener: boolean,
+  isDeferredListenerLegacyFBSupport?: boolean
+) {
+
+}
+
+export function getListenerSetKey (domEventName: DOMEventName, capture: boolean) {
+  return `${domEventName}__${capture ? 'capture' : 'bubble'}`
+}
