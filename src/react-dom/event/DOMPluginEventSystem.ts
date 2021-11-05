@@ -1,6 +1,11 @@
 import { allNativeEvents } from './EventRegistry'
 import { DOMEventName } from './DomEventNames'
 import { getEventListenerSet } from '../ReactDOMComponentTree'
+import * as SimpleEventPlugin from './plugins/SimpleEventPlugin'
+import { createEventListenerWrapperWithPriority } from './ReactDOMEventListener'
+
+// 注册下支持的事件
+SimpleEventPlugin.registerEvents()
 
 const listeningMarker = '_reactLisening' + Math.random().toString(36).slice(2)
 
@@ -76,7 +81,7 @@ export function listenToNativeEvent (
   targetElement: Element | null,
   eventSystemFlags: number = 0
 ) {
-  const target = targetElement as EventTarget
+  const target = rootContainerElement
 
   const listenerSet = getEventListenerSet(target)
   const listenerSetKey = getListenerSetKey(domEventName, isCapturePhaseListener)
@@ -95,7 +100,8 @@ function addTrappedEventListener (
   isCapturePhaseListener: boolean,
   isDeferredListenerLegacyFBSupport?: boolean
 ) {
-
+  // 创建监听事件
+  const listener = createEventListenerWrapperWithPriority(targetContainer, domEventName, eventSystemFlags)
 }
 
 export function getListenerSetKey (domEventName: DOMEventName, capture: boolean) {

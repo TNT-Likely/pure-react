@@ -4,6 +4,7 @@ import { enableEagerRootListeners } from '../shared/ReactFeatureFlags'
 import { COMMENT_NODE } from './shared/HTMLNodeType'
 import { createContainer } from '../react-reconciler/ReactFiberReconciler'
 import { markContainerAsRoot } from './ReactDOMComponentTree'
+import { listenToAllSupportedEvents } from './event/DOMPluginEventSystem'
 
 export type RootType = {
   render: (children: any) => void
