@@ -3,6 +3,7 @@ import { DOMEventName } from './DomEventNames'
 import { getEventListenerSet } from '../ReactDOMComponentTree'
 import * as SimpleEventPlugin from './plugins/SimpleEventPlugin'
 import { createEventListenerWrapperWithPriority } from './ReactDOMEventListener'
+import { removeEventListener, addEventBubbleListener, addEventBubbleListenerWithPassiveFlag, addEventCaptureListener, addEventCaptureListenerWithPassiveFlag } from './EventListener'
 
 // 注册下支持的事件
 SimpleEventPlugin.registerEvents()
@@ -101,7 +102,34 @@ function addTrappedEventListener (
   isDeferredListenerLegacyFBSupport?: boolean
 ) {
   // 创建监听事件
-  const listener = createEventListenerWrapperWithPriority(targetContainer, domEventName, eventSystemFlags)
+  let listener = createEventListenerWrapperWithPriority(targetContainer, domEventName, eventSystemFlags)
+
+  const isPassiveListener = undefined
+  targetContainer = isDeferredListenerLegacyFBSupport ? (targetContainer as any).ownerDocument : targetContainer
+
+  let unsubscribeListener
+
+  if (isDeferredListenerLegacyFBSupport) {
+    const originalListener = listener
+    listener = function () {
+      removeEventListener(targetContainer, domEventName, unsubscribeListener, isCapturePhaseListener)
+    }
+    return originalListener.apply(this, arguments)
+  }
+
+  if (isCapturePhaseListener) {
+    if (isPassiveListener !== undefined) {
+      unsubscribeListener = addEventCaptureListenerWithPassiveFlag(targetContainer, domEventName, listener, isPassiveListener)
+    } else {
+      unsubscribeListener = addEventCaptureListener(targetContainer, domEventName, listener)
+    }
+  } else {
+    if (isPassiveListener !== undefined) {
+      unsubscribeListener = addEventBubbleListenerWithPassiveFlag(targetContainer, domEventName, listener, isPassiveListener)
+    } else {
+      unsubscribeListener = addEventBubbleListener(targetContainer, domEventName, listener)
+    }
+  }
 }
 
 export function getListenerSetKey (domEventName: DOMEventName, capture: boolean) {
