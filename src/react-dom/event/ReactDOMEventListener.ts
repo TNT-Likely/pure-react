@@ -2,6 +2,19 @@ import { UserBlockingEvent, ContinuousEvent, DiscreteEvent } from '../../shared/
 import { DOMEventName } from './DomEventNames'
 import { getEventPriorityForPluginSystem } from './DOMEventProperties'
 import { discreteUpdates } from './ReactDOMUpdateBatching'
+import { dispatchEventForPluginEventSystem } from './DOMPluginEventSystem'
+import getEventTarget from './getEventTarget'
+import { getClosestInstanceFromNode } from '../ReactDOMComponentTree'
+
+export let _enabled = true
+
+export function setEnabled (enabled?: boolean) {
+  _enabled = !!enabled
+}
+
+export function isEnabled () {
+  return _enabled
+}
 
 /** 创建带优先级的事件监听包装器 */
 export function createEventListenerWrapperWithPriority (
@@ -52,8 +65,43 @@ function dispatchUserBlockingEvent (
 function dispatchEvent (
   domeventName,
   eventSystemFlags,
-  container,
+  targetContainer,
   nativeEvent
 ) {
+  console.log('派发事件', domeventName, eventSystemFlags)
 
+  if (!_enabled) return
+
+  const blockOn = attemptToDispatchEvent(
+    domeventName,
+    eventSystemFlags,
+    targetContainer,
+    nativeEvent
+  )
+
+  if (blockOn === null) {
+    return
+  }
+
+  dispatchEventForPluginEventSystem(domeventName, eventSystemFlags, nativeEvent, null, targetContainer)
+}
+
+/** 尝试去派发事件 */
+export function attemptToDispatchEvent (
+  domEventName: DOMEventName,
+  eventSystemFlags: number,
+  targetContainer: EventTarget,
+  nativeEvent: Event
+) {
+  const nativeEventTarget = getEventTarget(nativeEvent)
+
+  const targetInst = getClosestInstanceFromNode(nativeEventTarget)
+
+  dispatchEventForPluginEventSystem(
+    domEventName,
+    eventSystemFlags,
+    nativeEvent,
+    targetInst,
+    targetContainer
+  )
 }

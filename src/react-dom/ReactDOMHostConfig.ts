@@ -3,7 +3,7 @@ import { RootType } from './ReactDOMRoot'
 import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, DOCUMENT_NODE } from './shared/HTMLNodeType'
 import { Namespaces, getIntrinsicNamespace, getChildNamespace } from '../shared/DOMNamespaces'
 import { getOwnerDocumentFromRootContainer, setInitialProperties } from './ReactDOMComponent'
-import { updateFiberProps } from './ReactDOMComponentTree'
+import { updateFiberProps, precacheFiberNode } from './ReactDOMComponentTree'
 
 const { html: HTML_NAMESPACE } = Namespaces
 export type Container = (Element & { _reactRootContainer?: RootType }) |
@@ -42,7 +42,7 @@ export function createInstance (
 
   const domElement: Element = createElement(type, props, rootContainerInstance, parentNameSpace)
 
-  // precacheFiberNode(internalInstanceHandle, domElement)
+  precacheFiberNode(internalInstanceHandle, domElement)
   updateFiberProps(domElement, props)
   return domElement
 }
@@ -83,6 +83,7 @@ export function createTextInstance (
   internalInstanceHandle: Object
 ):Text {
   const textNode = createTextNode(text, rootContainerInstance)
+  precacheFiberNode(internalInstanceHandle, textNode)
   return textNode
 }
 
