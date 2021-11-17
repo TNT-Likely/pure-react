@@ -1,7 +1,9 @@
 import { Fiber } from 'src/react-reconciler/ReactInternalTypes'
 import { DOMEventName } from '../DomEventNames'
 import { registerSimpleEvents, topLevelEventsToReactNames } from '../DOMEventProperties'
+import { accumulateSinglePhaseListeners } from '../DOMPluginEventSystem'
 import { IS_CAPTURE_PHASE } from '../EventSystemFlags'
+import { SyntheticEvent } from '../SyntheticEvent'
 
 function extractEvents (
   dispatchQueue: any[],

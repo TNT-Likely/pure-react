@@ -39,3 +39,8 @@ export function getClosestInstanceFromNode (targetNode: Node): null | Fiber {
     return tagrgetInst
   }
 }
+
+/** 从html实际节点上取出Fiber的属性 */
+export function getFiberCurrentPropsFromStateNode (node) {
+  return node[internalPropsKey]
+}

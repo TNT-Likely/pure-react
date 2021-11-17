@@ -9,6 +9,7 @@ import { HostComponent, HostPortal, HostRoot, HostText } from 'src/react-reconci
 import { COMMENT_NODE } from '../shared/HTMLNodeType'
 import getEventTarget from './getEventTarget'
 import { IS_CAPTURE_PHASE } from './EventSystemFlags'
+import getListener from './getListener'
 
 // 注册下支持的事件
 SimpleEventPlugin.registerEvents()
@@ -241,6 +242,62 @@ function dispatchEventsForPlugins (
   const dispatchQueue:any[] = []
 
   extractEvents(dispatchQueue, domEventName, tagrgetInst, nativeEvent, nativeEventTarget, eventSystemFlags, targetContainer)
+
+  processDispatchQueue(dispatchQueue, eventSystemFlags)
+}
+
+/** 按顺序执行派发事件 */
+function processDispatchQueueItemsInOrder (
+  event: Event,
+  dispatchQueue: Array<any>,
+  inCapturePhase: boolean
+) {
+  let prevInstance = null
+
+  if (inCapturePhase) {
+    for (let i = dispatchQueue.length - 1; i > -1; i--) {
+      const { instance, listener, currentTarget } = dispatchQueue[i]
+      if (prevInstance !== currentTarget && event.isPropagationStopped()) {
+        return
+      }
+      executeDispatch(event, listener, currentTarget)
+      prevInstance = instance
+    }
+  } else {
+    for (let i = 0; i < dispatchQueue.length; i++) {
+      const { instance, listener, currentTarget } = dispatchQueue[i]
+      if (prevInstance !== currentTarget && event.isPropagationStopped()) {
+        return
+      }
+      executeDispatch(event, listener, currentTarget)
+      prevInstance = instance
+    }
+  }
+}
+
+/** 执行派发 */
+function executeDispatch (
+  event: any,
+  listener: Function,
+  currentTarget: EventTarget
+) {
+  // const type = event.type || 'unknow-event'
+  event.currentTarget = currentTarget
+
+  listener.apply(undefined, event)
+  event.currentTarget = null
+}
+
+/** 执行派发队列 */
+function processDispatchQueue (
+  dispatchQueue: any[],
+  eventSystemFlags: number
+) {
+  const inCapturePhase = (eventSystemFlags & IS_CAPTURE_PHASE) !== 0
+  for (let i = 0; i < dispatchQueue.length; i++) {
+    const { event, listeners } = dispatchQueue[i]
+    processDispatchQueueItemsInOrder(event, listeners, inCapturePhase)
+  }
 }
 
 /** 提取事件 */
@@ -273,4 +330,43 @@ export function accumulateSinglePhaseListeners (
   accumulateTargetOnly: boolean
 ) {
   const captureName = reactName !== null ? reactName + 'Capture' : null
+  const reactEventName = inCapturePhase ? captureName : reactName
+
+  const listeners:any[] = []
+
+  let instance = targetFiber
+  let lastHostComponent:Element|null = null
+
+  /** 自下而上收集事件 */
+  while (instance !== null) {
+    const { stateNode, tag } = instance
+
+    if (tag === HostComponent && stateNode !== null) {
+      lastHostComponent = stateNode as Element
+
+      if (reactEventName !== null) {
+        const listener = getListener(instance, reactEventName)
+
+        if (typeof listener === 'function') {
+          listeners.push(createDispatchListener(instance, listener, lastHostComponent))
+        }
+      }
+    }
+
+    instance = instance.return
+  }
+
+  return listeners
+}
+
+function createDispatchListener (
+  instance: null | Fiber,
+  listener: Function,
+  currentTarget: EventTarget
+) {
+  return {
+    instance,
+    listener,
+    currentTarget
+  }
 }

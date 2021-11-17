@@ -68,8 +68,6 @@ function dispatchEvent (
   targetContainer,
   nativeEvent
 ) {
-  console.log('派发事件', domeventName, eventSystemFlags)
-
   if (!_enabled) return
 
   const blockOn = attemptToDispatchEvent(
@@ -104,4 +102,6 @@ export function attemptToDispatchEvent (
     targetInst,
     targetContainer
   )
+
+  return null
 }
