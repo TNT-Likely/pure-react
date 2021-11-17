@@ -8,6 +8,15 @@ import { Hydrating, Incomplete, NoFlags, Placement, Update } from './ReactFiberF
 import { commitPlacement } from './ReactFiberCommitWork'
 import { completeWork } from './ReactFiberCompleteWork'
 
+export const NoContext = /*             */ 0b0000000
+const BatchedContext = /*               */ 0b0000001
+const EventContext = /*                 */ 0b0000010
+const DiscreteEventContext = /*         */ 0b0000100
+const LegacyUnbatchedContext = /*       */ 0b0001000
+const RenderContext = /*                */ 0b0010000
+const CommitContext = /*                */ 0b0100000
+export const RetryAfterError = /*       */ 0b1000000
+
 type RootExitStatus = 0 | 1 | 2 | 3 | 4 | 5;
 const RootIncomplete = 0
 const RootFatalErrored = 1
@@ -16,6 +25,7 @@ const RootSuspended = 3
 const RootSuspendedWithDelay = 4
 const RootCompleted = 5
 
+let executionContext: number = NoContext
 let workInProgressRoot: any | null = null
 let workInProgress: any = null
 let mostRecentlyUpdatedRoot: any = null
@@ -25,7 +35,7 @@ export const subtreeRenderLanes = NoLanes
 
 // 请求更新优先级
 export function requestUpdateLane (fiber: any): Lane {
-  return 0
+  return 1
 }
 
 // 请求事件事件
@@ -37,16 +47,17 @@ export function requestEventTime () {
 export function scheduleUpdateOnFiber (fiber: Fiber, lane: Lane, eventTime: number) {
   const root = markUpdateLaneFromFiberToRoot(fiber, lane)
 
-  if (root === workInProgressRoot) {
-
+  if (lane === SyncLane) {
+    if (
+      (executionContext & LegacyUnbatchedContext) !== NoContext &&
+      (executionContext & (RenderContext | CommitContext)) === NoContext
+    ) {
+      performSyncWorkOnRoot(root)
+    } else {
+      performSyncWorkOnRoot(root)
+      console.log(333)
+    }
   }
-
-  // if (lane === SyncLane) {
-  // 开始根节点的同步工作
-  performSyncWorkOnRoot(root)
-  // } else {
-
-  // }
 
   mostRecentlyUpdatedRoot = root
 }
@@ -88,7 +99,7 @@ function performSyncWorkOnRoot (root) {
   return null
 }
 
-function commitRoot (root:FiberRoot) {
+function commitRoot (root: FiberRoot) {
   // const renderPriorityLevel =
   // 先省略下优先级
   commitRootImpl(root, 97)
@@ -145,8 +156,8 @@ function commitBeforeMutationEffectsImpl (fiber: Fiber) {
 }
 
 function commitMutationEffects (
-  firstChild:Fiber,
-  root:FiberRoot,
+  firstChild: Fiber,
+  root: FiberRoot,
   renderPriorityLevel: number
 ) {
   let fiber: Fiber | null = firstChild
@@ -288,4 +299,16 @@ function completeUnitOfWork (unitOfWork: Fiber): void {
 function handleError (root, thrownValue): void {
   workInProgress = null
   console.error(root, thrownValue)
+}
+
+export function unbatchedUpdates<A, R> (fn: (a: A) => R, a: A): R {
+  const prevExecutionContext = executionContext
+  executionContext &= ~BatchedContext
+  executionContext |= LegacyUnbatchedContext
+
+  try {
+    return fn(a)
+  } finally {
+    executionContext = prevExecutionContext
+  }
 }

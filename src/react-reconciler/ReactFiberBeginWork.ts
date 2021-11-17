@@ -63,6 +63,20 @@ export function beginWork (current: Fiber | null, workInProgress: Fiber, renderL
         renderLanes
       )
     }
+    case FunctionComponent: { // 更新函数式组件
+      const Component = workInProgress.type
+      const unresolvedProps = workInProgress.pendingProps
+      const resolvedProps = workInProgress.elementType === Component ? unresolvedProps : unresolvedProps
+
+      return updateFunctionComponent(
+        current,
+        workInProgress,
+        Component,
+        resolvedProps,
+        renderLanes
+      )
+    }
+
     case HostRoot: // 更新宿主节点
       return updateHostRoot(current, workInProgress, renderLanes)
     case HostComponent: // 更新宿主组件
@@ -70,6 +84,22 @@ export function beginWork (current: Fiber | null, workInProgress: Fiber, renderL
     case HostText: // 更新文本节点
       return updateHostText(current, workInProgress, renderLanes)
   }
+}
+
+/** 更新函数式组件 */
+function updateFunctionComponent (
+  current: Fiber | null,
+  workInProgress: Fiber,
+  Component: (props, args) => void,
+  resolvedProps: Object,
+  renderLanes: number
+) {
+  const context = null
+  const nextChildren = renderWithHooks(current, workInProgress, Component, resolvedProps, context, renderLanes)
+
+  reconcileChildren(current, workInProgress, nextChildren, renderLanes)
+
+  return workInProgress.child
 }
 
 function updateHostText (

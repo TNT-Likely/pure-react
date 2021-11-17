@@ -5,8 +5,7 @@ const App = function () {
   const [count, setCount] = useState(0)
 
   const handleClick = () => {
-    console.log('点击事件')
-    // setCount(count + 1)
+    setCount(count + 1)
   }
 
   return <>

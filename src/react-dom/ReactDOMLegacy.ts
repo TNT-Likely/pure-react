@@ -3,6 +3,7 @@ import { DOCUMENT_NODE, ELEMENT_NODE } from './shared/HTMLNodeType'
 import { createLegacyRoot, RootType } from './ReactDOMRoot'
 import { Container } from './ReactDOMHostConfig'
 import { updateContainer, getPublicRootInstance } from '../react-reconciler/ReactFiberReconciler'
+import { unbatchedUpdates } from 'src/react-reconciler/ReactFiberWorkLoop'
 
 // 渲染主入口
 export function render (
@@ -45,9 +46,9 @@ function legacyRenderSubtreeIntoContainer (
       }
     }
 
-    // unbatchedUpdates(() => {
-    updateContainer(children, fiberRoot, parentComponent, callback)
-    // })
+    unbatchedUpdates(() => {
+      updateContainer(children, fiberRoot, parentComponent, callback)
+    })
   } else {
     fiberRoot = root._internalRoot
     if (typeof callback === 'function') {

@@ -1,5 +1,5 @@
 import ReactSharedInternal from '../shared/ReactSharedInternal'
-import { Lane, Lanes, NoLanes } from './ReactFiberLane'
+import { Lane, Lanes, NoLanes, SyncLane } from './ReactFiberLane'
 import { scheduleUpdateOnFiber } from './ReactFiberWorkLoop'
 import { BaseStateAction, Dispatch, Dispatcher, Fiber } from './ReactInternalTypes'
 
@@ -92,7 +92,7 @@ function updateState<T> (initialState: (() => T | T)):[T, Dispatch<BaseStateActi
 
 // 派发action
 function dispatchAction<S, A> (fiber: Fiber, queue: UpdateQueue<S, A>, action: A) {
-  const lane = NoLanes
+  const lane = SyncLane
   const eventTime = 0
 
   const update:Update<S, A> = {
