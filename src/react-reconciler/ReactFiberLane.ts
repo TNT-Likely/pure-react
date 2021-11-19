@@ -11,6 +11,10 @@ export function isSubsetOfLanes (set: Lanes, subset: Lanes | Lane) {
   return (set & subset) === subset
 }
 
+export function includesSomeLane (a: Lanes | Lane, b: Lanes | Lane) {
+  return (a & b) !== NoLanes
+}
+
 export function mergeLanes (a: Lane, b: Lane) {
   return a | b
 }

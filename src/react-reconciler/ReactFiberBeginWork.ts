@@ -1,8 +1,8 @@
-import { Lane, Lanes } from './ReactFiberLane'
+import { Lanes, includesSomeLane } from './ReactFiberLane'
 import { Fiber, FiberRoot } from './ReactInternalTypes'
 import { HostRoot, IndeterminateComponent, FunctionComponent, HostComponent, HostText } from './ReactWorkTags'
 import { processUpdateQueue, cloneUpdateQueue } from './ReactUpdateQueue'
-import { reconcileChildFibers, mountChildFibers } from './ReactChildFiber'
+import { reconcileChildFibers, mountChildFibers, cloneChildFibers } from './ReactChildFiber'
 import { Placement } from './ReactFiberFlags'
 import { renderWithHooks } from './ReactFiberHooks'
 import { shouldSetTextContent } from './ReactDomHostConfig'
@@ -41,15 +41,32 @@ function mountIndeterminateComponent (
   return workInProgress.child
 }
 
+function bailoutOnAlreadyFinishedWork (
+  current: Fiber | null,
+  workInProgress: Fiber,
+  renderLanes: number
+) {
+  if (current !== null) {
+    workInProgress.dependencies = current.dependencies
+  }
+
+  cloneChildFibers(current, workInProgress)
+
+  return workInProgress.child
+}
+
 export function beginWork (current: Fiber | null, workInProgress: Fiber, renderLanes: Lanes) {
   const updateLanes = workInProgress.lanes
 
   if (current !== null) {
-    const oldProps = current.memoizedProps
-    const newProps = workInProgress.pendingProps
+    // const oldProps = current.memoizedProps
+    // const newProps = workInProgress.pendingProps
 
-    switch (workInProgress.tag) {
+    // switch (workInProgress.tag) {
 
+    // }
+    if (!includesSomeLane(renderLanes, updateLanes)) {
+      return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes)
     }
   }
 

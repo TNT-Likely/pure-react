@@ -3,7 +3,7 @@ import { REACT_ELEMENT_TYPE, REACT_FRAGMENT_TYPE } from '../shared/ReactSymbols'
 import { Placement } from './ReactFiberFlags'
 import { Lanes } from './ReactFiberLane'
 import { Fiber } from './ReactInternalTypes'
-import { createFiberFromElement, createFiberFromText } from './ReactFiber'
+import { createFiberFromElement, createFiberFromText, createWorkInProgress } from './ReactFiber'
 
 function ChildReconciler (shouldTrackSideEffects) {
   function placeSingleChild (newFiber: Fiber): Fiber {
@@ -193,3 +193,25 @@ function ChildReconciler (shouldTrackSideEffects) {
 
 export const reconcileChildFibers = ChildReconciler(true)
 export const mountChildFibers = ChildReconciler(false)
+
+/** 克隆子fiber节点 */
+export function cloneChildFibers (
+  current: Fiber | null,
+  workInProgress: Fiber
+) {
+  if (workInProgress.child === null) return
+
+  let currentChild = workInProgress.child
+  let newChild = createWorkInProgress(currentChild, current.pendingProps)
+
+  workInProgress.child = newChild
+  newChild.return = workInProgress
+
+  /** 克隆兄弟节点 */
+  while (current.sibling !== null) {
+    currentChild = currentChild.sibling
+    newChild = newChild.sibling = createWorkInProgress(currentChild, currentChild.pendingProps)
+    newChild.return = workInProgress
+  }
+  newChild.sibling = null
+}

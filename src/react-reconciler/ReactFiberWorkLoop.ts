@@ -31,7 +31,7 @@ let workInProgress: any = null
 let mostRecentlyUpdatedRoot: any = null
 let workInProgressRootRenderLanes: Lane = NoLanes
 let workInProgressRootExitStatus: RootExitStatus = RootIncomplete
-export const subtreeRenderLanes = NoLanes
+export let subtreeRenderLanes = NoLanes
 
 // 请求更新优先级
 export function requestUpdateLane (fiber: any): Lane {
@@ -232,6 +232,8 @@ function prepareFreshStack (root: any, lanes: Lanes) {
 
   //     cancelTimeout(timeoutHandle)
   // }
+
+  workInProgressRootRenderLanes = subtreeRenderLanes = lanes
 
   workInProgressRoot = root
 
