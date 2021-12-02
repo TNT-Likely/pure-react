@@ -39,6 +39,7 @@ export function createContainer (
   hydrate: boolean,
   hydrateCallbacks: null | SuspenseHydrationCallbacks
 ) {
+  // 创建fiber根节点
   return createFiberRoot(containerInfo, tag, hydrate, hydrateCallbacks)
 }
 

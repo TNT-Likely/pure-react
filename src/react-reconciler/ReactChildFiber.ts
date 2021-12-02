@@ -1,9 +1,10 @@
 import { ReactElement } from '../shared/ReactElementType'
 import { REACT_ELEMENT_TYPE, REACT_FRAGMENT_TYPE } from '../shared/ReactSymbols'
-import { Placement } from './ReactFiberFlags'
-import { Lanes } from './ReactFiberLane'
+import { Deletion, Placement } from './ReactFiberFlags'
+import { Lane, Lanes } from './ReactFiberLane'
 import { Fiber } from './ReactInternalTypes'
 import { createFiberFromElement, createFiberFromText, createWorkInProgress } from './ReactFiber'
+import { Block, HostText } from './ReactWorkTags'
 
 function ChildReconciler (shouldTrackSideEffects) {
   function placeSingleChild (newFiber: Fiber): Fiber {
@@ -89,6 +90,163 @@ function ChildReconciler (shouldTrackSideEffects) {
     return lastPlacedIndex
   }
 
+  function useFiber (fiber: Fiber, pendingProps: any):Fiber {
+    const clone = createWorkInProgress(fiber, pendingProps)
+    clone.index = 0
+    clone.sibling = null
+    return clone
+  }
+
+  function updateTextNode (
+    returnFiber: Fiber,
+    current: Fiber | null,
+    textContent: string,
+    lanes: Lanes
+  ) {
+    if (current === null || current.tag !== HostText) {
+      const created = createFiberFromText(textContent, returnFiber.mode, lanes)
+      created.return = returnFiber
+      return created
+    } else {
+      const existing = useFiber(current, textContent)
+      existing.return = returnFiber
+      return existing
+    }
+  }
+
+  function updateElement (
+    returnFiber: Fiber,
+    current: Fiber | null,
+    element: ReactElement,
+    lanes: Lanes
+  ):Fiber {
+    if (current !== null) {
+      if (current.elementType === element.type) {
+        const existing = useFiber(current, element.props)
+        existing.ref = coerceRef(returnFiber, current, element)
+        existing.return = returnFiber
+        return existing
+      } else if (current.tag === Block) {
+        const type = element.type
+        const existing = useFiber(current, element.props)
+        existing.return = returnFiber
+        existing.type = type
+
+        return existing
+      }
+    }
+
+    const created = createFiberFromElement(element, returnFiber.mode, lanes)
+    created.ref = coerceRef(returnFiber, current, element)
+    created.return = returnFiber
+    return created
+  }
+
+  function updateSlot (
+    returnFiber: Fiber,
+    oldFiber: Fiber | null,
+    newChild: any,
+    lanes: number
+  ):Fiber|null {
+    const key = oldFiber !== null ? oldFiber.key : null
+
+    if (typeof newChild === 'string' || typeof newChild === 'number') {
+      if (key !== null) {
+        return null
+      }
+
+      return updateTextNode(returnFiber, oldFiber, '' + newChild, lanes)
+    }
+
+    if (typeof newChild === 'object' && newChild !== null) {
+      switch (newChild.$$typeof) {
+        case REACT_ELEMENT_TYPE: {
+          if (newChild.key === key) {
+            // if (newChild.type === REACT_FRAGMENT_TYPE) {
+            //   return
+            // }
+            return updateElement(returnFiber, oldFiber, newChild, lanes)
+          } else {
+            return null
+          }
+        }
+      }
+    }
+  }
+
+  function coerceRef (
+    returnFiber: Fiber,
+    current: Fiber | null,
+    element: ReactElement
+  ) {
+    const mixedRef = element.ref
+    if (mixedRef !== null &&
+      typeof mixedRef !== 'function' &&
+      typeof mixedRef !== 'object') {
+      if (element._owner) {
+        const owner = element._owner
+        let inst
+        if (owner) {
+          const ownerFiber = owner
+          inst = ownerFiber.stateNode
+        }
+
+        const stringRef = '' + mixedRef
+        if (current !== null &&
+            current.ref !== null &&
+            typeof current.ref === 'function' &&
+            current.ref._stringRef === stringRef) {
+          return current.ref
+        }
+
+        const ref = function (value) {
+          const refs = inst.refs
+          // if (refs === emptyRefsObject) {
+          //   refs = inst.refs = {}
+          // }
+
+          if (value === null) {
+            delete refs[stringRef]
+          } else {
+            refs[stringRef] = stringRef
+          }
+        }
+        ref._stringRef = stringRef
+        return ref
+      }
+    }
+    return mixedRef
+  }
+
+  function deleteChild (returnFiber: Fiber, childToDelete: Fiber):void {
+    if (!shouldTrackSideEffects) {
+      return
+    }
+
+    const deletions = returnFiber.deletions
+    if (deletions === null) {
+      returnFiber.deletions = [childToDelete]
+      returnFiber.flags |= Deletion
+    } else {
+      deletions.push(childToDelete)
+    }
+  }
+
+  function deleteRemainingChildren (
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null
+  ) {
+    if (!shouldTrackSideEffects) {
+      return null
+    }
+    let childToDelete = currentFirstChild
+    while (childToDelete !== null) {
+      deleteChild(returnFiber, childToDelete)
+      childToDelete = childToDelete.sibling
+    }
+    return null
+  }
+
   // 调和数组子节点
   function reconcileChildrenArray (
     returnFiber: Fiber,
@@ -101,11 +259,49 @@ function ChildReconciler (shouldTrackSideEffects) {
 
     let previousNewFiber: Fiber | null = null
 
-    const oldFiber = currentFirstChild
+    let oldFiber = currentFirstChild
     let lastPlacedIndex = 0
     let newIdx = 0
+    let nextOldFiber = null
 
-    const newOldFiber = null
+    for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
+      if (oldFiber.index > newIdx) {
+        nextOldFiber = oldFiber
+        oldFiber = null
+      } else {
+        nextOldFiber = oldFiber.sibling
+      }
+
+      const newFiber = updateSlot(returnFiber, oldFiber, newChildren[newIdx], lanes)
+      if (newFiber === null) {
+        if (oldFiber === null) {
+          oldFiber = nextOldFiber
+        }
+        break
+      }
+
+      if (shouldTrackSideEffects) {
+        if (oldFiber && newFiber.alternate === null) {
+          deleteChild(returnFiber, oldFiber)
+        }
+      }
+
+      lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx)
+
+      if (previousNewFiber === null) {
+        resultingFirstChild = newFiber
+      } else {
+        previousNewFiber.sibling = newFiber
+      }
+
+      previousNewFiber = newFiber
+      oldFiber = nextOldFiber
+    }
+
+    if (newIdx === newChildren.length) {
+      deleteRemainingChildren(returnFiber, oldFiber)
+      return resultingFirstChild
+    }
 
     if (oldFiber === null) {
       for (; newIdx < newChildren.length; newIdx++) {

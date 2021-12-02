@@ -29,37 +29,37 @@ class FiberNode {
     this.mode = mode
   }
 
-    // Instance
-    tag: number = 0
-    key: null | string = null
-    elementType = null
-    type = null
-    stateNode: any = null
+  // Instance
+  tag: number = 0
+  key: null | string = null
+  elementType = null // 节点类型
+  type = null
+  stateNode: any = null // 实际的html元素节点
 
-    // Fiber
-    return = null
-    child = null
-    sibling = null
-    index: number = 0
+  // Fiber
+  return = null // 父节点
+  child = null // 子节点
+  sibling = null // 兄弟节点
+  index: number = 0
 
-    ref = null
+  ref = null
 
-    pendingProps: any = null
-    memoizedProps = null
-    updateQueue = null
-    memoizedState = null
-    dependencies = null
+  pendingProps: any = null
+  memoizedProps = null
+  updateQueue = null
+  memoizedState = null
+  dependencies = null
 
-    mode: number = 0
+  mode: number = 0
 
-    // Effects
-    flags = 0
-    subtreeFlags = 0
-    deletions = null
-    lanes = NoLanes
-    childLanes = NoLanes
+  // Effects
+  flags = 0
+  subtreeFlags = 0
+  deletions = null
+  lanes = NoLanes
+  childLanes = NoLanes
 
-    alternate = null
+  alternate = null
 }
 
 export type TFiberNode = typeof FiberNode

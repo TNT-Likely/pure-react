@@ -8,6 +8,8 @@ import { renderWithHooks } from './ReactFiberHooks'
 import { shouldSetTextContent } from './ReactDomHostConfig'
 import { pushHostContainer } from './ReactFiberHostContext'
 
+let didReceiveUpdate: boolean = false
+
 // 挂载混合组件
 function mountIndeterminateComponent (
   _current,
@@ -59,13 +61,13 @@ export function beginWork (current: Fiber | null, workInProgress: Fiber, renderL
   const updateLanes = workInProgress.lanes
 
   if (current !== null) {
-    // const oldProps = current.memoizedProps
-    // const newProps = workInProgress.pendingProps
+    const oldProps = current.memoizedProps
+    const newProps = workInProgress.pendingProps
 
-    // switch (workInProgress.tag) {
-
-    // }
-    if (!includesSomeLane(renderLanes, updateLanes)) {
+    if (oldProps !== newProps) {
+      didReceiveUpdate = true
+    } else if (!includesSomeLane(renderLanes, updateLanes)) {
+      didReceiveUpdate = false
       return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes)
     }
   }

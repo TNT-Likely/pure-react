@@ -21,7 +21,7 @@ export type RootOptions = {
   },
 }
 
-// 创建根节点
+// 创建Fiber根节点
 export function createLegacyRoot (container: Container,
   options?: RootOptions): RootType {
   return new ReactDOMBlockingRoot(container, LegacyRoot, options)
@@ -29,6 +29,7 @@ export function createLegacyRoot (container: Container,
 
 class ReactDOMBlockingRoot {
   constructor (container: Container, tag: RootTag, options: void | RootOptions) {
+    // 创建根节点
     this._internalRoot = createRootImpl(container, tag, options)
   }
 

@@ -1,40 +1,40 @@
 import ReactSharedInternal from '../shared/ReactSharedInternal'
-import { Lane, Lanes, NoLanes, SyncLane } from './ReactFiberLane'
-import { scheduleUpdateOnFiber } from './ReactFiberWorkLoop'
+import { isSubsetOfLanes, Lane, Lanes, mergeLanes, NoLane, NoLanes, SyncLane } from './ReactFiberLane'
+import { requestUpdateLane, scheduleUpdateOnFiber } from './ReactFiberWorkLoop'
 import { BaseStateAction, Dispatch, Dispatcher, Fiber } from './ReactInternalTypes'
 
 const { ReactCurrentDispatcher } = ReactSharedInternal
 
 type Update<S, A> = {
-    lane: Lane,
-    action: A,
-    eagerReducer: ((S, A) => S) | null,
-    eagerState: S | null,
-    next: Update<S, A>,
-    priority?: any
+  lane: Lane,
+  action: A,
+  eagerReducer: ((S, A) => S) | null,
+  eagerState: S | null,
+  next: Update<S, A>,
+  priority?: any
 }
 
 type UpdateQueue<S, A> = {
-    pending: Update<S, A> | null,
-    dispatch: ((A)=>any) | null,
-    lastRenderedReducer: ((S, A) => A) | null,
-    lastRenderedState: S | null
+  pending: Update<S, A> | null,
+  dispatch: ((A) => any) | null,
+  lastRenderedReducer: ((S, A) => A) | null,
+  lastRenderedState: S | null
 }
 
 export type Hook = {
-    memoizedState: any,
-    baseState: any,
-    baseQueue: Update<any, any> | null,
-    queue: UpdateQueue<any, any> | null,
-    next: Hook | null
+  memoizedState: any,
+  baseState: any,
+  baseQueue: Update<any, any> | null,
+  queue: UpdateQueue<any, any> | null,
+  next: Hook | null
 }
 
-let renderLanes:Lanes = NoLanes
-let currentlyRenderingFiber:Fiber|null = null
+let renderLanes: Lanes = NoLanes
+let currentlyRenderingFiber: Fiber | null = null
 let currentHook: Hook | null = null
 let workInProgressHook: Hook | null = null
 
-function moutnWorkInProgressHook ():Hook {
+function moutnWorkInProgressHook (): Hook {
   const hook: Hook = {
     memoizedState: null,
     baseState: null,
@@ -52,7 +52,7 @@ function moutnWorkInProgressHook ():Hook {
   return workInProgressHook
 }
 
-function basicStateReducer<T> (state: T, action: BaseStateAction<T>):T {
+function basicStateReducer<T> (state: T, action: BaseStateAction<T>): T {
   return typeof action === 'function' ? (action as (T) => T)(state) : action
 }
 
@@ -65,7 +65,7 @@ const HooksDispatcherOnUpdate: Dispatcher = {
 }
 
 // 挂载state
-function mountState<T> (initialState: (() => T | T)):[T, Dispatch<BaseStateAction<T>>] {
+function mountState<T> (initialState: (() => T | T)): [T, Dispatch<BaseStateAction<T>>] {
   const hook = moutnWorkInProgressHook()
 
   if (typeof initialState === 'function') {
@@ -86,16 +86,16 @@ function mountState<T> (initialState: (() => T | T)):[T, Dispatch<BaseStateActio
   return [hook.memoizedState, dispatch]
 }
 
-function updateState<T> (initialState: (() => T | T)):[T, Dispatch<BaseStateAction<T>>] {
+function updateState<T> (initialState: (() => T | T)): [T, Dispatch<BaseStateAction<T>>] {
   return updateReducer(basicStateReducer, initialState)
 }
 
 // 派发action
 function dispatchAction<S, A> (fiber: Fiber, queue: UpdateQueue<S, A>, action: A) {
-  const lane = SyncLane
+  const lane = requestUpdateLane(fiber)
   const eventTime = 0
 
-  const update:Update<S, A> = {
+  const update: Update<S, A> = {
     lane,
     action,
     eagerReducer: null,
@@ -140,12 +140,152 @@ function dispatchAction<S, A> (fiber: Fiber, queue: UpdateQueue<S, A>, action: A
   }
 }
 
-function updateReducer<S, I, A> (reducer: (state: S, action: A) => S, initialArg: I, init?: (initialArg: I) => S) :[S, Dispatch<A>] {
-  return []
+function updateWorkInProgressHook (): Hook {
+  let nextCurrentHook: null |Hook
+  if (currentHook === null) {
+    const current = currentlyRenderingFiber.alternate
+    if (current !== null) {
+      nextCurrentHook = current.memoizedState
+    } else {
+      nextCurrentHook = null
+    }
+  } else {
+    nextCurrentHook = currentHook.next
+  }
+
+  let nextWorkInProgressHook: null | Hook
+  if (workInProgressHook === null) {
+    nextWorkInProgressHook = currentlyRenderingFiber.memoizedState
+  } else {
+    nextWorkInProgressHook = workInProgressHook.next
+  }
+
+  if (nextWorkInProgressHook !== null) {
+    workInProgressHook = nextWorkInProgressHook
+    nextWorkInProgressHook = workInProgressHook.next
+
+    currentHook = nextCurrentHook
+  } else {
+    currentHook = nextCurrentHook
+
+    const newHook: Hook = {
+      memoizedState: currentHook.memoizedState,
+      baseState: currentHook.baseState,
+      baseQueue: currentHook.baseQueue,
+      queue: currentHook.queue,
+      next: null
+    }
+
+    if (workInProgressHook == null) {
+      currentlyRenderingFiber.memoizedState = workInProgressHook = newHook
+    } else {
+      workInProgressHook = workInProgressHook.next = newHook
+    }
+  }
+
+  return workInProgressHook
+}
+
+function updateReducer<S, I, A> (
+  reducer: (state: S, action: A) => S,
+  initialArg: I,
+  init?: (initialArg: I) => S
+): [S, Dispatch<A>] {
+  const hook = updateWorkInProgressHook()
+  const queue = hook.queue
+
+  queue.lastRenderedReducer = reducer
+
+  const current: Hook = currentHook
+
+  let baseQueue = current.baseQueue
+
+  const pendingQueue = queue.pending
+  if (pendingQueue !== null) {
+    if (baseQueue !== null) {
+      const baseFirst = baseQueue.next
+      const pendingFirst = pendingQueue.next
+      baseQueue.next = pendingFirst
+      pendingQueue.next = baseFirst
+    }
+
+    current.baseQueue = baseQueue = pendingQueue
+    queue.pending = null
+  }
+
+  if (baseQueue !== null) {
+    const first = baseQueue.next
+    let newState = current.baseState
+
+    let newBaseState = null
+    let newBaseQueueFirst = null
+    let newBaseQueueLast = null
+    let update = first
+
+    do {
+      const updateLane = update.lane
+      if (!isSubsetOfLanes(renderLanes, updateLane)) {
+        const clone:Update<S, A> = {
+          lane: updateLane,
+          action: update.action,
+          eagerReducer: update.eagerReducer,
+          eagerState: update.eagerState,
+          next: null
+        }
+
+        if (newBaseQueueLast === null) {
+          newBaseQueueFirst = newBaseQueueLast = clone
+          newBaseState = newState
+        } else {
+          newBaseQueueLast = newBaseQueueLast.next = clone
+        }
+        currentlyRenderingFiber.lanes = mergeLanes(currentlyRenderingFiber.lanes, updateLane)
+      } else {
+        if (newBaseQueueLast !== null) {
+          const clone: Update<S, A> = {
+            lane: NoLane,
+            action: update.action,
+            eagerReducer: update.eagerReducer,
+            eagerState: update.eagerState,
+            next: null
+          }
+          newBaseQueueLast = newBaseQueueLast.next = clone
+        }
+
+        if (update.eagerReducer === reducer) {
+          newState = update.eagerState
+        } else {
+          const action = update.action
+          newState = reducer(newState, action)
+        }
+      }
+      update = update.next
+    } while (update !== null && update !== first)
+
+    if (newBaseQueueLast === null) {
+      newBaseState = newState
+    } else {
+      newBaseQueueLast.next = newBaseQueueFirst
+    }
+
+    // if (!Object.is(newState, hook.memoizedState)) {
+    //   markWorkInProgressReceivedUpdate()
+    // }
+
+    hook.memoizedState = newState
+    hook.baseState = newBaseState
+    hook.baseQueue = newBaseQueueLast
+
+    queue.lastRenderedState = newState
+  }
+
+  const dispatch:Dispatch<A> = queue.dispatch
+
+  return [hook.memoizedState, dispatch]
 }
 
 export function renderWithHooks<Props, SecondArg> (
-  current: Fiber|null,
+  current: Fiber | null,
   workInProgress: Fiber,
   Component: (p: Props, arg: SecondArg) => any,
   props: Props,

@@ -1,5 +1,5 @@
 import ReactCurrentOwner from '../react/ReactCurrentOwner'
-import { Lane, Lanes, NoLanes, SyncLane } from './ReactFiberLane'
+import { getNextLanes, includesSomeLane, Lane, Lanes, markRootUpdated, mergeLanes, NoLanes, SyncLane } from './ReactFiberLane'
 import { Fiber, FiberRoot } from './ReactInternalTypes'
 import { HostRoot } from './ReactWorkTags'
 import { beginWork } from './ReactFiberBeginWork'
@@ -7,6 +7,7 @@ import { createWorkInProgress } from './ReactFiber'
 import { Hydrating, Incomplete, NoFlags, Placement, Update } from './ReactFiberFlags'
 import { commitPlacement } from './ReactFiberCommitWork'
 import { completeWork } from './ReactFiberCompleteWork'
+import { BlockingMode, NoMode } from './ReactTypeOfMode'
 
 export const NoContext = /*             */ 0b0000000
 const BatchedContext = /*               */ 0b0000001
@@ -35,6 +36,10 @@ export let subtreeRenderLanes = NoLanes
 
 // 请求更新优先级
 export function requestUpdateLane (fiber: any): Lane {
+  const mode = fiber.mode
+  if ((mode & BlockingMode) === NoMode) {
+    return SyncLane
+  }
   return 1
 }
 
@@ -47,6 +52,8 @@ export function requestEventTime () {
 export function scheduleUpdateOnFiber (fiber: Fiber, lane: Lane, eventTime: number) {
   const root = markUpdateLaneFromFiberToRoot(fiber, lane)
 
+  markRootUpdated(root, lane, eventTime)
+
   if (lane === SyncLane) {
     if (
       (executionContext & LegacyUnbatchedContext) !== NoContext &&
@@ -55,7 +62,6 @@ export function scheduleUpdateOnFiber (fiber: Fiber, lane: Lane, eventTime: numb
       performSyncWorkOnRoot(root)
     } else {
       performSyncWorkOnRoot(root)
-      console.log(333)
     }
   }
 
@@ -63,10 +69,22 @@ export function scheduleUpdateOnFiber (fiber: Fiber, lane: Lane, eventTime: numb
 }
 
 function markUpdateLaneFromFiberToRoot (sourceFiber: Fiber, lane: Lane) {
+  sourceFiber.lanes = mergeLanes(sourceFiber.lanes, lane)
+  let alternate = sourceFiber.alternate
+  if (alternate !== null) {
+    alternate.lanes = mergeLanes(alternate.lanes, lane)
+  }
+
   let node = sourceFiber
   let parent = sourceFiber.return
 
   while (parent !== null) {
+    parent.childLanes = mergeLanes(parent.childLanes, lane)
+    alternate = parent.alternate
+    if (alternate !== null) {
+      alternate.childLanes = mergeLanes(alternate.childLanes, lane)
+    }
+
     node = parent
     parent = parent.return
   }
@@ -83,11 +101,12 @@ function performSyncWorkOnRoot (root) {
   let lanes
   let exitStatus
 
-  if (root === workInProgressRoot) {
+  if (root === workInProgressRoot &&
+    includesSomeLane(root.expiredLanes, workInProgressRootRenderLanes)) {
     lanes = workInProgressRootRenderLanes
     exitStatus = renderRootSync(root, lanes)
   } else {
-    lanes = workInProgressRootRenderLanes
+    lanes = getNextLanes(root, lanes)
     exitStatus = renderRootSync(root, lanes)
   }
 

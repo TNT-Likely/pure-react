@@ -84,7 +84,7 @@ type BaseFiberRootProperties = {
 
     callbackNode: any,
     callbackPriority: number,
-    eventTime: any,
+    eventTimes: any,
     expirationTimes: any,
 
     pendingLanes: Lanes,

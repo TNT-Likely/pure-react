@@ -1,7 +1,7 @@
 import { Container } from '../react-dom/ReactDOMHostConfig'
 import { SuspenseHydrationCallbacks } from './ReactInternalTypes'
 import { RootTag } from './ReactRootTags'
-import { NoLanes } from './ReactFiberLane'
+import { createLaneMap, NoLanes, NoTimestamp } from './ReactFiberLane'
 import { createHostRootFiber } from './ReactFiber'
 import { initializeUpdateQueue } from './ReactUpdateQueue'
 
@@ -25,8 +25,8 @@ export class FiberRootNode {
   hydrationCallbacks: SuspenseHydrationCallbacks | null = null
   callbackNoye = null
   callbackPriority = 0
-  eventTimes = 0
-  expirationTimes = 0
+  eventTimes = createLaneMap(NoLanes)
+  expirationTimes = createLaneMap(NoTimestamp)
 
   pendingLanes = NoLanes
   suspendedLanes = NoLanes
