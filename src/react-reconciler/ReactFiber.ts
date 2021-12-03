@@ -30,7 +30,7 @@ class FiberNode {
   }
 
   // Instance
-  tag: number = 0
+  tag: number = 0 // fiber节点类型
   key: null | string = null
   elementType = null // 节点类型
   type = null
@@ -44,10 +44,10 @@ class FiberNode {
 
   ref = null
 
-  pendingProps: any = null
-  memoizedProps = null
+  pendingProps: any = null // 即将设置的属性
+  memoizedProps = null // 现在的属性
   updateQueue = null
-  memoizedState = null
+  memoizedState = null // 当前state
   dependencies = null
 
   mode: number = 0
