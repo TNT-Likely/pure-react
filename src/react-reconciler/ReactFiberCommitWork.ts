@@ -1,4 +1,4 @@
-import { Container, insertInContainerBefore, appendChildToContainer } from '../react-dom/ReactDOMHostConfig'
+import { Container, insertInContainerBefore, appendChildToContainer, commitTextUpdate } from '../react-dom/ReactDOMHostConfig'
 import { Placement } from './ReactFiberFlags'
 import { Fiber } from './ReactInternalTypes'
 import { DehydratedFragment, FundamentalComponent, HostComponent, HostPortal, HostRoot, HostText } from './ReactWorkTags'
@@ -111,6 +111,23 @@ function insertOrAppendPlacementNode (node: Fiber, before: any, parent: Containe
 
 }
 
+function commitWork (
+  current: Fiber | null,
+  finishedWork: Fiber
+) {
+  switch (finishedWork.tag) {
+    case HostText: {
+      const textInstance: Element = finishedWork.stateNode
+      const newText: string = finishedWork.memoizedProps
+
+      const oldText: string = current !== null ? current.memoizedProps : newText
+
+      commitTextUpdate(textInstance, oldText, newText)
+    }
+  }
+}
+
 export {
-  commitPlacement
+  commitPlacement,
+  commitWork
 }

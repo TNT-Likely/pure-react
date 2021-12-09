@@ -64,6 +64,14 @@ const HooksDispatcherOnUpdate: Dispatcher = {
   useState: updateState
 }
 
+export const ContextOnlyDispatcher: Dispatcher = {
+  useState: throwInvalidHookError
+}
+
+function throwInvalidHookError () {
+  console.error('错误的时机')
+}
+
 // 挂载state
 function mountState<T> (initialState: (() => T | T)): [T, Dispatch<BaseStateAction<T>>] {
   const hook = moutnWorkInProgressHook()
@@ -141,7 +149,7 @@ function dispatchAction<S, A> (fiber: Fiber, queue: UpdateQueue<S, A>, action: A
 }
 
 function updateWorkInProgressHook (): Hook {
-  let nextCurrentHook: null |Hook
+  let nextCurrentHook: null | Hook
   if (currentHook === null) {
     const current = currentlyRenderingFiber.alternate
     if (current !== null) {
@@ -225,7 +233,7 @@ function updateReducer<S, I, A> (
     do {
       const updateLane = update.lane
       if (!isSubsetOfLanes(renderLanes, updateLane)) {
-        const clone:Update<S, A> = {
+        const clone: Update<S, A> = {
           lane: updateLane,
           action: update.action,
           eagerReducer: update.eagerReducer,
@@ -279,7 +287,7 @@ function updateReducer<S, I, A> (
     queue.lastRenderedState = newState
   }
 
-  const dispatch:Dispatch<A> = queue.dispatch
+  const dispatch: Dispatch<A> = queue.dispatch
 
   return [hook.memoizedState, dispatch]
 }
@@ -300,9 +308,14 @@ export function renderWithHooks<Props, SecondArg> (
   workInProgress.lanes = NoLanes
 
   // hooks执行者注册
-  ReactCurrentDispatcher.current = (current === null || current.memoizedState === null ? HooksDispatcherOnMount : HooksDispatcherOnUpdate)
+  ReactCurrentDispatcher.current = current === null ||
+    current.memoizedState === null
+    ? HooksDispatcherOnMount
+    : HooksDispatcherOnUpdate
 
   const children = Component(props, secondArg)
+
+  ReactCurrentDispatcher.current = ContextOnlyDispatcher
 
   renderLanes = NoLanes
   currentlyRenderingFiber = null

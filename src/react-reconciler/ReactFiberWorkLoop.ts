@@ -5,7 +5,7 @@ import { HostRoot } from './ReactWorkTags'
 import { beginWork } from './ReactFiberBeginWork'
 import { createWorkInProgress } from './ReactFiber'
 import { Hydrating, Incomplete, NoFlags, Placement, Update } from './ReactFiberFlags'
-import { commitPlacement } from './ReactFiberCommitWork'
+import { commitPlacement, commitWork } from './ReactFiberCommitWork'
 import { completeWork } from './ReactFiberCompleteWork'
 import { BlockingMode, NoMode } from './ReactTypeOfMode'
 
@@ -213,6 +213,11 @@ function commitMutationEffectsImpl (fiber: Fiber, root: FiberRoot, renderPriorit
     case Placement: {
       commitPlacement(fiber)
       fiber.flags &= ~Placement
+      break
+    }
+    case Update: {
+      const current = fiber.alternate
+      commitWork(current, fiber)
       break
     }
   }

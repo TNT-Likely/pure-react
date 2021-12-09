@@ -128,3 +128,11 @@ export function finalizeInitialChildren (domElement: Element, type: string, prop
   // return shouldAutoFocusHostComponent(type, props)
   return false
 }
+
+export function commitTextUpdate (
+  textInstance: Element,
+  oldText: string,
+  newText: string
+) {
+  textInstance.nodeValue = newText
+}

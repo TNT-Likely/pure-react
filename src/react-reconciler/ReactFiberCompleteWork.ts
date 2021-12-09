@@ -1,8 +1,9 @@
-import { Lanes } from './ReactFiberLane'
+import { Lanes, markRootUpdated } from './ReactFiberLane'
 import { Fiber } from './ReactInternalTypes'
 import { Fragment, FunctionComponent, FundamentalComponent, HostComponent, HostPortal, HostRoot, HostText, IndeterminateComponent } from './ReactWorkTags'
 import { getRootHostContainer, getHostContext } from './ReactFiberHostContext'
 import { createInstance, createTextInstance, finalizeInitialChildren, appendInitialChild } from '../react-dom/ReactDOMHostConfig'
+import { Update } from './ReactFiberFlags'
 
 const appendAllChildren = function (
   parent: Element,
@@ -84,17 +85,17 @@ function completeWork (
         if (finalizeInitialChildren(instance, type, newProps, rootContainerInstance, currentHostContext)) {
           // markUpdate(workInProgress)
         }
-
-        bubbleProperties(workInProgress)
-        return null
       }
-      break
+      bubbleProperties(workInProgress)
+      return null
     }
     case HostText: {
+      const newText = newProps
       const rootContainerInstance = getRootHostContainer()
       const currentHostContext = getHostContext()
       if (current !== null && workInProgress.stateNode !== null) {
-        // updateHostText()
+        const oldText = current.memoizedProps
+        updateHostText(current, workInProgress, oldText, newText)
       } else {
         const instance = createTextInstance(newProps, rootContainerInstance, currentHostContext, workInProgress)
         workInProgress.stateNode = instance
@@ -105,6 +106,23 @@ function completeWork (
     default:
       return null
   }
+}
+
+/** 更新文本 */
+function updateHostText (
+  current: Fiber,
+  workInProgress: Fiber,
+  oldText: string,
+  newText: string
+) {
+  if (oldText !== newText) {
+    markUpdate(workInProgress)
+  }
+}
+
+/** 标记为更新 */
+function markUpdate (workInProgress: Fiber) {
+  workInProgress.flags |= Update
 }
 
 function updateHostContainer (current: Fiber | null, workInProgress: Fiber) {
