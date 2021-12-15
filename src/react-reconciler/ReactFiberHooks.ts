@@ -34,7 +34,7 @@ let currentlyRenderingFiber: Fiber | null = null
 let currentHook: Hook | null = null
 let workInProgressHook: Hook | null = null
 
-function moutnWorkInProgressHook (): Hook {
+function mountWorkInProgressHook (): Hook {
   const hook: Hook = {
     memoizedState: null,
     baseState: null,
@@ -74,7 +74,7 @@ function throwInvalidHookError () {
 
 // 挂载state
 function mountState<T> (initialState: (() => T | T)): [T, Dispatch<BaseStateAction<T>>] {
-  const hook = moutnWorkInProgressHook()
+  const hook = mountWorkInProgressHook()
 
   if (typeof initialState === 'function') {
     initialState = initialState()
@@ -89,7 +89,7 @@ function mountState<T> (initialState: (() => T | T)): [T, Dispatch<BaseStateActi
     lastRenderedState: (initialState as any)
   }
 
-  const dispatch = queue.dispatch = (dispatchAction as any).bind(null, currentlyRenderingFiber, queue)
+  const dispatch = queue.dispatch = dispatchAction.bind(null, currentlyRenderingFiber, queue)
 
   return [hook.memoizedState, dispatch]
 }
@@ -130,7 +130,7 @@ function dispatchAction<S, A> (fiber: Fiber, queue: UpdateQueue<S, A>, action: A
       let prevDispatcher
 
       try {
-        const currentState: S = queue.lastRenderedReducer
+        const currentState: S = queue.lastRenderedState
         const eagerState = lastRenderedReducer(currentState, action)
 
         update.eagerReducer = lastRenderedReducer
