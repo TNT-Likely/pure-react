@@ -1,8 +1,8 @@
 import { Lanes, markRootUpdated } from './ReactFiberLane'
 import { Fiber } from './ReactInternalTypes'
 import { Fragment, FunctionComponent, FundamentalComponent, HostComponent, HostPortal, HostRoot, HostText, IndeterminateComponent } from './ReactWorkTags'
-import { getRootHostContainer, getHostContext } from './ReactFiberHostContext'
-import { createInstance, createTextInstance, finalizeInitialChildren, appendInitialChild } from '../react-dom/ReactDOMHostConfig'
+import { getRootHostContainer, getHostContext, pushHostContainer } from './ReactFiberHostContext'
+import { createInstance, createTextInstance, finalizeInitialChildren, appendInitialChild, Container } from '../react-dom/ReactDOMHostConfig'
 import { Update } from './ReactFiberFlags'
 
 const appendAllChildren = function (
@@ -41,6 +41,27 @@ const appendAllChildren = function (
   }
 }
 
+const updateHostComponent = function (
+  current: Fiber,
+  workInProgress: Fiber,
+  type: any,
+  newProps: object,
+  rootContainerInstance: Container
+) {
+  const oldProps = current.memoizedProps
+  if (oldProps === newProps) return
+
+  const instance = workInProgress.stateNode
+  const currentHostContext = getHostContext()
+
+  const updatePayload = []
+
+  workInProgress.updateQueue = updatePayload
+  if (updatePayload) {
+    markUpdate(workInProgress)
+  }
+}
+
 function completeWork (
   current: Fiber | null,
   workInProgress: Fiber,
@@ -65,8 +86,11 @@ function completeWork (
       return null
     }
     case HostComponent: {
+      // pushHostContext(workInProgress)
+      const rootContainerInstance = getRootHostContainer()
+      const type = workInProgress.type
       if (current !== null && workInProgress.stateNode != null) {
-        // updateHostComponent(current, workInProgress, type, newProps, rootContainerInstance)
+        updateHostComponent(current, workInProgress, type, newProps, rootContainerInstance)
       } else {
         const rootContainerInstance = getRootHostContainer()
         const type = workInProgress.type

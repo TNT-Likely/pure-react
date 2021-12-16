@@ -136,3 +136,17 @@ export function commitTextUpdate (
 ) {
   textInstance.nodeValue = newText
 }
+
+export function commitUpdate (
+  domElement: Element,
+  updatePayload: Array<any>,
+  type: string,
+  oldProps: Props,
+  newProps: Props,
+  internalInstanceHandle: Object
+): void {
+  updateFiberProps(domElement, newProps)
+  // Apply the diff to the DOM node.
+  updateProperties(domElement, updatePayload, type, oldProps, newProps)
+  // domElement.onClick = newProps.onClick
+}

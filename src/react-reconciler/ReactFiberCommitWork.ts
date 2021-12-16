@@ -1,4 +1,4 @@
-import { Container, insertInContainerBefore, appendChildToContainer, commitTextUpdate } from '../react-dom/ReactDOMHostConfig'
+import { Container, insertInContainerBefore, appendChildToContainer, commitTextUpdate, commitUpdate } from '../react-dom/ReactDOMHostConfig'
 import { Placement } from './ReactFiberFlags'
 import { Fiber } from './ReactInternalTypes'
 import { DehydratedFragment, FundamentalComponent, HostComponent, HostPortal, HostRoot, HostText } from './ReactWorkTags'
@@ -123,6 +123,29 @@ function commitWork (
       const oldText: string = current !== null ? current.memoizedProps : newText
 
       commitTextUpdate(textInstance, oldText, newText)
+      return
+    }
+    case HostComponent: {
+      const instance = finishedWork.stateNode
+      if (instance !== null) {
+        const newProps = finishedWork.memoizedProps
+
+        const oldProps = current !== null ? current.memoizedProps : newProps
+        const type = finishedWork.type
+        const updatePayload = finishedWork.updateQueue
+        finishedWork.updateQueue = null
+
+        if (updatePayload !== null) {
+          commitUpdate(
+            instance,
+            updatePayload,
+            type,
+            oldProps,
+            newProps,
+            finishedWork
+          )
+        }
+      }
     }
   }
 }
